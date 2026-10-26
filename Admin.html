@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://i.ibb.co/RkGB4YsP/image.png">
+    <title>แผงควบคุมแอดมิน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b1120; --panel: #111a2e; --panel-2: #16213a; --line: #1f2a44; --line-2: #2a3856;
+            --text: #e2e8f0; --muted: #8193b2; --dim: #5b6b8a;
+            --primary: #38bdf8; --accent: #fbbf24; --success: #22c55e; --danger: #ef4444; --purple: #a78bfa;
+            --radius: 14px;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Sarabun', sans-serif; font-size: 14px; }
+        button, input, select { font-family: inherit; font-size: inherit; color: inherit; }
+        button { cursor: pointer; }
+        .hidden { display: none !important; }
+
+        /* ปุ่ม */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); font-weight: 700; transition: background 0.15s, border-color 0.15s, transform 0.15s, opacity 0.15s; white-space: nowrap; }
+        .btn:hover:not(:disabled) { border-color: var(--primary); transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: #04121f; }
+        .btn-primary:hover:not(:disabled) { background: #7dd3fc; }
+        .btn-success { background: var(--success); border-color: var(--success); color: #04140a; }
+        .btn-danger { background: transparent; border-color: rgba(239,68,68,0.5); color: #f87171; }
+        .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.12); border-color: var(--danger); }
+        .btn-sm { min-height: 32px; padding: 0 10px; font-size: 13px; border-radius: 8px; }
+        .icon-btn { width: 34px; height: 34px; padding: 0; border-radius: 9px; border: 1px solid var(--line-2); background: transparent; display: inline-grid; place-items: center; transition: 0.15s; }
+        .icon-btn:hover { background: var(--panel-2); border-color: var(--primary); }
+        .icon-btn.danger:hover { border-color: var(--danger); background: rgba(239,68,68,0.12); }
+
+        .input { width: 100%; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--bg); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+        .input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
+        select.input { padding-right: 8px; }
+        label.field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
+        /* หน้าล็อก */
+        .lock { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+        .lock-card { width: 100%; max-width: 360px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 32px 28px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .lock-card h1 { margin: 10px 0 4px; font-size: 22px; }
+        .lock-card p { margin: 0 0 20px; color: var(--muted); }
+        .lock-card .input { text-align: center; font-size: 18px; letter-spacing: 6px; margin-bottom: 12px; }
+        .lock-err { color: #f87171; min-height: 20px; margin-top: 10px; font-size: 13px; }
+
+        /* โครงหลัก */
+        .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 60px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .topbar h1 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+        .topbar .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+        .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+        .stat-label { color: var(--muted); font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .stat-value { font-size: 26px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(34,197,94,0.2); display: inline-block; }
+
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+        .toolbar .search { flex: 1 1 260px; position: relative; }
+        .toolbar .search .input { padding-left: 36px; }
+        .toolbar .search span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.6; }
+        .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip { min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--muted); font-weight: 700; font-size: 13px; transition: 0.15s; }
+        .chip:hover { color: var(--text); }
+        .chip.active { background: rgba(56,189,248,0.12); border-color: var(--primary); color: var(--primary); }
+
+        /* ตาราง */
+        .table-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 860px; }
+        th { text-align: left; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; padding: 12px 14px; background: var(--panel-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+        td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+        tbody tr { transition: background 0.12s; }
+        tbody tr:hover { background: rgba(56,189,248,0.04); }
+        .num { color: var(--dim); font-variant-numeric: tabular-nums; width: 44px; }
+        .user-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; background: var(--panel-2); border: 2px solid var(--line-2); }
+        .avatar.online { border-color: var(--success); }
+        .user-name { font-weight: 700; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+        .user-rank { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .user-rank img { width: 16px; height: 16px; object-fit: contain; }
+        .uid { font-family: ui-monospace, Consolas, monospace; color: #93c5fd; }
+        .pass { font-family: ui-monospace, Consolas, monospace; color: var(--accent); }
+        /* ช่องที่กดแก้ได้ในตาราง */
+        .editable { display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px; margin: -3px -6px; border-radius: 7px; cursor: text; max-width: 220px; border: 1px dashed transparent; transition: background 0.12s, border-color 0.12s; }
+        .editable span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .editable::after { content: '✏️'; font-size: 11px; opacity: 0; transition: opacity 0.12s; }
+        .editable:hover { background: rgba(56,189,248,0.08); border-color: var(--line-2); }
+        .editable:hover::after { opacity: 0.7; }
+        .inline-input { width: 170px; min-height: 32px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--primary); background: var(--bg); outline: none; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); font-family: inherit; }
+        .masked .pass span { filter: blur(5px); }
+        .wpm-best { color: var(--primary); font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+        .wpm-last { color: var(--dim); font-size: 12px; }
+        .exp { color: var(--purple); font-weight: 700; font-variant-numeric: tabular-nums; }
+        .mult { display: inline-block; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: rgba(34,197,94,0.12); color: #4ade80; }
+        .mult.boost { background: rgba(251,191,36,0.15); color: var(--accent); }
+        .seen { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+        .seen.online { color: #4ade80; font-weight: 700; }
+        .actions { display: flex; gap: 6px; justify-content: flex-end; }
+        .empty { text-align: center; padding: 50px 16px; color: var(--muted); }
+        .more { display: flex; justify-content: center; padding: 14px; }
+
+        /* แผงแก้ไข (เลื่อนออกจากขวา) */
+        .backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.65); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .backdrop.show { opacity: 1; pointer-events: auto; }
+        .drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(520px, 100%); background: var(--panel); border-left: 1px solid var(--line); z-index: 51; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: -20px 0 50px rgba(0,0,0,0.4); }
+        .drawer.show { transform: none; }
+        .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+        .drawer-head h2 { margin: 0; font-size: 18px; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 18px 20px 30px; display: flex; flex-direction: column; gap: 18px; }
+        .drawer-foot { display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--panel); }
+        .drawer-foot .btn { flex: 1; }
+        .section { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+        .section-title { font-size: 13px; font-weight: 800; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .quick { display: flex; gap: 6px; flex-wrap: wrap; }
+        .quick .btn-sm { min-height: 28px; padding: 0 9px; font-size: 12px; }
+        .hint { font-size: 12px; color: var(--dim); }
+
+        .pic-row { display: flex; gap: 14px; align-items: center; }
+        .pic-big { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: var(--panel-2); flex: none; }
+        .pic-side { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .pic-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .pic-status { font-size: 12.5px; color: var(--muted); min-height: 18px; }
+
+        .rank-preview { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--panel-2); }
+        .rank-preview img { width: 32px; height: 32px; object-fit: contain; }
+        .rank-preview b { display: block; }
+        .bar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin-top: 4px; }
+        .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); }
+
+        .history { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .h-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; background: var(--panel-2); font-size: 13px; }
+        .h-row b { color: var(--primary); min-width: 64px; }
+        .h-row span { color: var(--muted); flex: 1; }
+        .meta { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+        .meta dt { color: var(--muted); }
+        .meta dd { margin: 0; word-break: break-all; }
+        .danger-zone { border-color: rgba(239,68,68,0.35); }
+
+        /* กล่องยืนยัน + แจ้งเตือน */
+        .dialog { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(2,6,23,0.7); }
+        .dialog-card { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .dialog-card h3 { margin: 0 0 8px; font-size: 18px; }
+        .dialog-card p { margin: 0 0 18px; color: var(--muted); line-height: 1.6; }
+        .dialog-card .input { margin-bottom: 16px; }
+        .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 70; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+        .toast { padding: 10px 16px; border-radius: 10px; background: #1e293b; border: 1px solid var(--line-2); box-shadow: 0 10px 30px rgba(0,0,0,0.4); font-weight: 700; animation: toastIn 0.2s ease-out; max-width: 90vw; }
+        .toast.ok { border-color: rgba(34,197,94,0.6); }
+        .toast.err { border-color: rgba(239,68,68,0.7); color: #fca5a5; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin 0.7s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 640px) {
+            .wrap { padding: 16px 12px 40px; }
+            .topbar h1 { font-size: 20px; }
+            .stat-value { font-size: 22px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 🔒 หน้าล็อก -->
+<div class="lock" id="lockScreen">
+    <form class="lock-card" onsubmit="unlock(event)">
+        <div style="font-size: 40px;">🛠️</div>
+        <h1>แผงควบคุมแอดมิน</h1>
+        <p>ใส่รหัสแอดมินเพื่อเข้าจัดการระบบ</p>
+        <input type="password" id="adminCode" class="input" placeholder="••••••" autocomplete="off" autofocus>
+        <button class="btn btn-primary" style="width: 100%;">เข้าสู่แผงควบคุม</button>
+        <div class="lock-err" id="lockErr"></div>
+    </form>
+</div>
+
+<!-- 🧭 แผงหลัก -->
+<div class="wrap hidden" id="app">
+    <div class="topbar">
+        <div>
+            <h1>🛠️ แผงควบคุมแอดมิน</h1>
+            <div class="sub" id="loadedAt">กำลังโหลด...</div>
+        </div>
+        <div class="topbar-actions">
+            <button class="btn" onclick="openServerTools()">⚡ เครื่องมือทั้งเซิร์ฟ</button>
+            <button class="btn" id="reloadBtn" onclick="loadAllUsers()">🔄 โหลดใหม่</button>
+            <button class="btn btn-success" onclick="openEditor(null)">➕ เพิ่มสมาชิก</button>
+            <button class="icon-btn" title="ล็อก" onclick="lockAdmin()">🔒</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="stat-label">👥 สมาชิกทั้งหมด</div><div class="stat-value" id="sTotal">–</div></div>
+        <div class="stat"><div class="stat-label"><span class="dot"></span> ออนไลน์ตอนนี้</div><div class="stat-value" id="sOnline" style="color:#4ade80">–</div></div>
+        <div class="stat"><div class="stat-label">🎮 เล่นวันนี้</div><div class="stat-value" id="sToday">–</div></div>
+        <div class="stat"><div class="stat-label">⚡ WPM เฉลี่ย</div><div class="stat-value" id="sAvg" style="color:var(--primary)">–</div></div>
+        <div class="stat"><div class="stat-label">✨ EXP รวมทั้งเซิร์ฟ</div><div class="stat-value" id="sExp" style="color:var(--purple)">–</div></div>
+    </div>
+
+    <div class="toolbar">
+        <div class="search"><span>🔍</span><input id="searchInput" class="input" placeholder="ค้นหาชื่อ หรือรหัสผ่าน..." oninput="applyView(true)"></div>
+        <select id="sortSelect" class="input" style="width: auto;" onchange="applyView(true)">
+            <option value="exp">เรียงตาม EXP</option>
+            <option value="wpm">เรียงตาม WPM</option>
+            <option value="seen">ออนไลน์ล่าสุด</option>
+            <option value="played">เล่นล่าสุด</option>
+            <option value="name">ชื่อ ก-ฮ</option>
+        </select>
+        <div class="chips" id="filterChips">
+            <button class="chip active" data-f="all">ทั้งหมด</button>
+            <button class="chip" data-f="online">🟢 ออนไลน์</button>
+            <button class="chip" data-f="pic">🖼️ มีรูป</button>
+            <button class="chip" data-f="never">ยังไม่เคยเล่น</button>
+        </div>
+        <button class="chip" id="maskBtn" onclick="toggleMask()">🙈 ซ่อนรหัสผ่าน</button>
+    </div>
+    <div class="hint" style="margin: -4px 0 10px">💡 กดที่ชื่อ ไอดี หรือรหัสผ่านในตารางเพื่อแก้ได้เลย (Enter = บันทึก, Esc = ยกเลิก)</div>
+
+    <div class="table-card">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr><th>#</th><th>ชื่อ</th><th>ไอดี (ล็อกอิน)</th><th>รหัสผ่าน</th><th>WPM</th><th>EXP / ตัวคูณ</th><th>เห็นล่าสุด</th><th style="text-align:right">จัดการ</th></tr>
+                </thead>
+                <tbody id="tableBody"><tr><td colspan="8" class="empty"><span class="spin"></span> กำลังโหลดข้อมูล...</td></tr></tbody>
+            </table>
+        </div>
+        <div class="more hidden" id="moreBox"><button class="btn" onclick="showMore()">แสดงเพิ่ม</button></div>
+    </div>
+</div>
+
+<!-- ✏️ แผงแก้ไขผู้เล่น -->
+<div class="backdrop" id="backdrop" onclick="closeEditor()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+        <h2 id="drawerTitle">แก้ไขผู้เล่น</h2>
+        <button class="icon-btn" onclick="closeEditor()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="drawer-body">
+        <div class="section">
+            <div class="section-title">🖼️ รูปโปรไฟล์</div>
+            <div class="pic-row">
+                <img class="pic-big" id="ePic" alt="">
+                <div class="pic-side">
+                    <div class="pic-btns">
+                        <button class="btn btn-sm" onclick="document.getElementById('ePicFile').click()">⬆️ อัปรูป / GIF</button>
+                        <button class="btn btn-sm" onclick="setPicFromUrl()">🔗 ใส่ลิงก์</button>
+                        <button class="btn btn-sm btn-danger" onclick="setPic('')">ลบรูป</button>
+                    </div>
+                    <div class="pic-status" id="ePicStatus"></div>
+                </div>
+            </div>
+            <input type="file" id="ePicFile" accept="image/*" class="hidden" onchange="onAdminPicPicked(event)">
+        </div>
+
+        <div class="section">
+            <div class="section-title">👤 บัญชี</div>
+            <label class="field">ชื่อ (ที่คนอื่นเห็น)<input id="eDisplay" class="input" maxlength="30"></label>
+            <div class="grid-2">
+                <label class="field">ไอดี (ใช้ล็อกอิน)<input id="eName" class="input" maxlength="30" autocapitalize="off" spellcheck="false"></label>
+                <label class="field">รหัสผ่าน<input id="ePass" class="input" autocomplete="off" spellcheck="false"></label>
+            </div>
+            <div class="hint" id="eRenameHint"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📊 สถิติ</div>
+            <label class="field">EXP
+                <input id="eExp" class="input" type="number" min="0" oninput="updateRankPreview()">
+            </label>
+            <div class="quick">
+                <button class="btn btn-sm" onclick="addExp(1000)">+1K</button>
+                <button class="btn btn-sm" onclick="addExp(10000)">+10K</button>
+                <button class="btn btn-sm" onclick="addExp(100000)">+100K</button>
+                <button class="btn btn-sm" onclick="addExp(-1000)">−1K</button>
+                <button class="btn btn-sm" onclick="addExp(-10000)">−10K</button>
+                <button class="btn btn-sm" onclick="setExpToNextRank()">⏫ เลื่อนยศถัดไป</button>
+            </div>
+            <div class="rank-preview" id="rankPreview"></div>
+            <label class="field">ตัวคูณ EXP (EXP ต่อคำที่พิมพ์ถูก)
+                <input id="eMult" class="input" type="number" min="0" step="any" oninput="updateMultHint()">
+            </label>
+            <div class="hint" id="eMultHint"></div>
+            <div class="quick">
+                <button class="btn btn-sm" onclick="setMult(1)">x1</button>
+                <button class="btn btn-sm" onclick="setMult(5)">x5</button>
+                <button class="btn btn-sm" onclick="setMult(10)">x10 (ปกติ)</button>
+                <button class="btn btn-sm" onclick="setMult(20)">x20</button>
+                <button class="btn btn-sm" onclick="setMult(50)">x50</button>
+            </div>
+            <div class="grid-2">
+                <label class="field">WPM สูงสุด<input id="eWpm" class="input" type="number" min="0"></label>
+                <label class="field">WPM ตาล่าสุด<input id="eLatest" class="input" type="number" min="0"></label>
+            </div>
+            <div class="hint">เปลี่ยนตัวคูณแล้วมีผลทันที ตาถัดไปของผู้เล่นใช้ค่าใหม่เลย</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📜 ประวัติการพิมพ์ <button class="btn btn-sm btn-danger" onclick="clearHistory()">ล้างทั้งหมด</button></div>
+            <div class="history" id="eHistory"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">🗂️ ข้อมูลระบบ</div>
+            <dl class="meta" id="eMeta"></dl>
+        </div>
+
+        <div class="section danger-zone" id="dangerZone">
+            <div class="section-title" style="color:#f87171">⚠️ โซนอันตราย</div>
+            <div class="pic-btns">
+                <button class="btn btn-sm btn-danger" onclick="resetStats()">รีเซ็ตสถิติ (EXP/WPM/ประวัติ = 0)</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser(editing.id)">🗑️ ลบบัญชีนี้</button>
+            </div>
+        </div>
+    </div>
+    <div class="drawer-foot">
+        <button class="btn" onclick="closeEditor()">ยกเลิก</button>
+        <button class="btn btn-primary" id="saveBtn" onclick="saveUser()">💾 บันทึก</button>
+    </div>
+</aside>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="stats.js?v=106"></script>
+<script src="avatar-tools.js?v=106"></script>
+<script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const fbConfig = {
+        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw",
+        authDomain: "pimthai-e16c3.firebaseapp.com",
+        projectId: "pimthai-e16c3",
+        storageBucket: "pimthai-e16c3.firebasestorage.app",
+        messagingSenderId: "955936818307",
+        appId: "1:955936818307:web:273fa00d07f36894d207b6"
+    };
+    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    const db = getFirestore(app);
+
+    // ⚠️ รหัสนี้กันได้แค่คนทั่วไป ไม่ใช่ระบบความปลอดภัยจริง (ใครเปิดโค้ดก็เห็น และฐานข้อมูลยังเปิดให้เขียนอยู่)
+    const ADMIN_CODE = "999999";
+    const IMGBB_API_KEY = "69dc1d1d5c746220fd5d13c2f66613b0";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyn-42qkA8MP5LD5kD8_9Wl6SHjbhlByRRI0Tt0R40FKPRSZgNnRxwFaOjAUJ0RwmvI/exec";
+    const ONLINE_MS = 15 * 60 * 1000;
+    const PAGE = 50;
+    const DEFAULT_PIC = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzk0YTNiOCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE3IiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTIwIDEwMCBDMjAgNjUgMzAgNTUgNTAgNTUgQzcwIDU1IDgwIDY1IDgwIDEwMCBaIiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+";
+
+    let users = [];          // [{ id, data }]
+    let view = [];           // หลังค้นหา/กรอง/เรียง
+    let shown = PAGE;
+    let filter = 'all';
+    let editing = null;      // { id (null = เพิ่มใหม่), pic, history }
+    let masked = false;
+    window.editing = null;
+
+    // ---------- เครื่องมือเล็กๆ ----------
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmt = n => Number(n || 0).toLocaleString();
+    const rankOf = exp => window.getRankInfo ? window.getRankInfo(Number(exp) || 0) : { current: { name: '-' }, next: null };
+    const isOnline = d => (d.last_online || 0) > Date.now() - ONLINE_MS;
+    const nameOf = (id, d) => d.displayName || id;
+    // ตัวคูณแบบเดียวกับหน้าเกม: ไม่ได้ตั้ง = 10, ตั้ง 0 = 0 จริงๆ
+    const multOf = v => (v === undefined || v === null || v === '' || !(Number(v) >= 0)) ? 10 : Number(v);
+
+    function ago(ts) {
+        if (!ts) return 'ไม่เคย';
+        const s = Math.floor((Date.now() - ts) / 1000);
+        if (s < 60) return 'เมื่อกี้';
+        if (s < 3600) return Math.floor(s / 60) + ' นาทีที่แล้ว';
+        if (s < 86400) return Math.floor(s / 3600) + ' ชม.ที่แล้ว';
+        if (s < 86400 * 30) return Math.floor(s / 86400) + ' วันที่แล้ว';
+        return new Date(ts).toLocaleDateString('th-TH');
+    }
+
+    function toast(msg, type = 'ok') {
+        const el = document.createElement('div');
+        el.className = 'toast ' + type;
+        el.textContent = msg;
+        $('toasts').append(el);
+        setTimeout(() => el.remove(), 3200);
+    }
+
+    // กล่องยืนยัน (แทน confirm/prompt) → คืนค่า true/false หรือข้อความที่พิมพ์
+    function ask({ title, text = '', okText = 'ตกลง', danger = false, input = null }) {
+        return new Promise(resolve => {
+            const box = document.createElement('div');
+            box.className = 'dialog';
+            box.innerHTML = `<div class="dialog-card"><h3>${esc(title)}</h3><p>${text}</p>
+                ${input !== null ? `<input class="input" value="${esc(input.value || '')}" placeholder="${esc(input.placeholder || '')}" type="${input.type || 'text'}">` : ''}
+                <div class="dialog-actions"><button class="btn" data-a="0">ยกเลิก</button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-a="1">${esc(okText)}</button></div></div>`;
+            const field = box.querySelector('input');
+            const done = ok => { box.remove(); resolve(ok ? (field ? field.value : true) : (field ? null : false)); };
+            box.addEventListener('click', e => { if (e.target === box) done(false); const a = e.target.dataset.a; if (a) done(a === '1'); });
+            box.addEventListener('keydown', e => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); });
+            document.body.append(box);
+            (field || box.querySelector('[data-a="1"]')).focus();
+        });
+    }
+
+    // ---------- ล็อก ----------
+    window.unlock = function(e) {
+        e.preventDefault();
+        if ($('adminCode').value !== ADMIN_CODE) { $('lockErr').textContent = '❌ รหัสไม่ถูก'; return; }
+        sessionStorage.setItem('adminUnlocked', '1');
+        startApp();
+    };
+    window.lockAdmin = function() {
+        sessionStorage.removeItem('adminUnlocked');
+        location.reload();
+    };
+    function startApp() {
+        $('lockScreen').classList.add('hidden');
+        $('app').classList.remove('hidden');
+        loadAllUsers();
+    }
+
+    // ---------- โหลด ----------
+    window.loadAllUsers = async function() {
+        $('reloadBtn').disabled = true;
+        try {
+            // ไม่ใช้ orderBy ฝั่งเซิร์ฟเวอร์ เพราะคนที่ไม่มีฟิลด์นั้นจะหายไปจากรายการ
+            const snap = await getDocs(collection(db, "users"));
+            users = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+            renderStats();
+            applyView(true);
+            $('loadedAt').textContent = `โหลดล่าสุด ${new Date().toLocaleTimeString('th-TH')} • ${users.length.toLocaleString()} บัญชี`;
+        } catch (err) {
+            console.error(err);
+            $('tableBody').innerHTML = `<tr><td colspan="8" class="empty" style="color:#f87171">❌ โหลดไม่ได้: ${esc(err.message)}</td></tr>`;
+        }
+        $('reloadBtn').disabled = false;
+    };
+
+    function renderStats() {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const played = users.filter(u => (u.data.wpm || 0) > 0);
+        $('sTotal').textContent = fmt(users.length);
+        $('sOnline').textContent = fmt(users.filter(u => isOnline(u.data)).length);
+        $('sToday').textContent = fmt(users.filter(u => (u.data.last_played || 0) >= today.getTime()).length);
+        $('sAvg').textContent = played.length ? (played.reduce((a, u) => a + Number(u.data.wpm || 0), 0) / played.length).toFixed(1) : '0';
+        $('sExp').textContent = fmt(users.reduce((a, u) => a + Number(u.data.exp || 0), 0));
+    }
+
+    window.applyView = function(resetPage) {
+        const q = $('searchInput').value.trim().toLowerCase();
+        const sort = $('sortSelect').value;
+        view = users.filter(({ id, data: d }) => {
+            if (q && ![id, d.displayName, d.password].some(v => String(v || '').toLowerCase().includes(q))) return false;
+            if (filter === 'online') return isOnline(d);
+            if (filter === 'pic') return !!d.profilePic;
+            if (filter === 'never') return !(d.wpm > 0);
+            return true;
+        });
+        const by = {
+            exp: (a, b) => (b.data.exp || 0) - (a.data.exp || 0),
+            wpm: (a, b) => (b.data.wpm || 0) - (a.data.wpm || 0),
+            seen: (a, b) => (b.data.last_online || 0) - (a.data.last_online || 0),
+            played: (a, b) => (b.data.last_played || 0) - (a.data.last_played || 0),
+            name: (a, b) => nameOf(a.id, a.data).localeCompare(nameOf(b.id, b.data), 'th')
+        };
+        view.sort(by[sort]);
+        if (resetPage) shown = PAGE;
+        renderTable();
+    };
+
+    window.showMore = function() { shown += PAGE; renderTable(); };
+
+    function renderTable() {
+        const rows = view.slice(0, shown).map(({ id, data: d }, i) => {
+            const online = isOnline(d);
+            const rank = rankOf(d.exp).current.name;
+            const icon = window.rankIconUrls ? window.rankIconUrls[rank] : '';
+            const mult = multOf(d.multiplier);
+            return `<tr data-id="${esc(id)}">
+                <td class="num">${i + 1}</td>
+                <td><div class="user-cell">
+                    <img class="avatar ${online ? 'online' : ''}" src="${esc(d.profilePic || DEFAULT_PIC)}" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_PIC}'">
+                    <div style="min-width:0"><div class="user-name"><span class="editable" data-edit="displayName" title="กดเพื่อแก้ชื่อ"><span>${esc(nameOf(id, d))}</span></span></div>
+                    <div class="user-rank">${icon ? `<img src="${esc(icon)}" loading="lazy">` : ''}${esc(rank)}</div></div>
+                </div></td>
+                <td><span class="editable uid" data-edit="id" title="กดเพื่อแก้ไอดี"><span>${esc(id)}</span></span></td>
+                <td><span class="editable pass" data-edit="password" title="กดเพื่อแก้รหัสผ่าน"><span>${esc(d.password || '—')}</span></span></td>
+                <td><div class="wpm-best">${fmt(d.wpm)}</div><div class="wpm-last">ล่าสุด ${fmt(d.latest_wpm)}</div></td>
+                <td><div class="exp">${fmt(d.exp)}</div><span class="mult ${mult !== 10 ? 'boost' : ''}">x${mult}</span></td>
+                <td><span class="seen ${online ? 'online' : ''}">${online ? '● ออนไลน์' : ago(d.last_online || d.last_played)}</span></td>
+                <td><div class="actions">
+                    <button class="icon-btn" data-act="edit" title="แก้ไข">✏️</button>
+                    <button class="icon-btn danger" data-act="delete" title="ลบ">🗑️</button>
+                </div></td></tr>`;
+        });
+        $('tableBody').innerHTML = rows.join('') || `<tr><td colspan="8" class="empty">ไม่พบผู้เล่นที่ตรงเงื่อนไข</td></tr>`;
+        $('moreBox').classList.toggle('hidden', shown >= view.length);
+        $('moreBox').querySelector('button').textContent = `แสดงเพิ่ม (เหลืออีก ${fmt(view.length - shown)})`;
+    }
+
+    // ปุ่มในตาราง (ใช้ data-id แทนการยัดชื่อใน onclick → ชื่อมีอักขระแปลกๆ ก็ไม่พัง)
+    $('tableBody').addEventListener('click', e => {
+        const cell = e.target.closest('[data-edit]');
+        if (cell) return startInlineEdit(cell);
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const id = btn.closest('tr').dataset.id;
+        if (btn.dataset.act === 'edit') openEditor(id);
+        if (btn.dataset.act === 'delete') deleteUser(id);
+    });
+    $('tableBody').addEventListener('dblclick', e => { const tr = e.target.closest('tr[data-id]'); if (tr && !e.target.closest('button, [data-edit], input')) openEditor(tr.dataset.id); });
+
+    window.toggleMask = function() {
+        masked = !masked;
+        document.querySelector('.table-card').classList.toggle('masked', masked);
+        $('maskBtn').textContent = masked ? '👁️ แสดงรหัสผ่าน' : '🙈 ซ่อนรหัสผ่าน';
+        $('maskBtn').classList.toggle('active', masked);
+    };
+
+    // ---------- แก้ชื่อ / ไอดี / รหัสผ่าน ในตารางได้เลย ----------
+    function startInlineEdit(cell) {
+        if (cell.querySelector('input')) return;
+        const id = cell.closest('tr').dataset.id;
+        const u = users.find(x => x.id === id);
+        const field = cell.dataset.edit;
+        const current = field === 'id' ? id : field === 'displayName' ? nameOf(id, u.data) : String(u.data.password || '');
+        const original = cell.innerHTML;
+        cell.innerHTML = `<input class="inline-input" maxlength="30" spellcheck="false" autocomplete="off">`;
+        const input = cell.querySelector('input');
+        input.value = current;
+        input.focus(); input.select();
+
+        let finished = false;
+        const finish = async save => {
+            if (finished) return;
+            finished = true;
+            const value = input.value.trim();
+            if (!save || value === current) { cell.innerHTML = original; return; }
+            cell.innerHTML = '<span class="spin"></span>';
+            try {
+                if (field === 'id') await renameUser(id, value);
+                else {
+                    if (!value) throw new Error(field === 'password' ? 'รหัสผ่านว่างไม่ได้' : 'ชื่อว่างไม่ได้');
+                    await setDoc(doc(db, "users", id), { [field]: value }, { merge: true });
+                    u.data[field] = value;
+                }
+                toast(field === 'id' ? `✅ เปลี่ยนไอดี ${id} → ${value} แล้ว` : field === 'password' ? `✅ เปลี่ยนรหัสผ่านของ ${nameOf(id, u.data)} แล้ว` : `✅ เปลี่ยนชื่อเป็น "${value}" แล้ว`);
+                applyView(false);
+            } catch (err) {
+                toast('❌ ' + err.message, 'err');
+                cell.innerHTML = original;
+            }
+        };
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); });
+        input.addEventListener('blur', () => finish(true));
+    }
+
+    // เปลี่ยนไอดี = ย้ายเอกสาร: เขียนไอดีใหม่ให้สำเร็จก่อน แล้วค่อยลบไอดีเก่า (พังกลางทางข้อมูลไม่หาย)
+    async function renameUser(oldId, newId, changes = {}) {
+        if (!newId) throw new Error('ไอดีว่างไม่ได้');
+        if (newId.includes('/')) throw new Error('ไอดีห้ามมีเครื่องหมาย /');
+        if ((await getDoc(doc(db, "users", newId))).exists()) throw new Error(`ไอดี "${newId}" มีคนใช้แล้ว`);
+        const u = users.find(x => x.id === oldId);
+        const fresh = await getDoc(doc(db, "users", oldId)); // เอาข้อมูลล่าสุด เผื่อผู้เล่นเพิ่งเล่นจบ
+        const data = { ...(fresh.exists() ? fresh.data() : u.data), ...changes, username: newId };
+        if (!data.displayName) data.displayName = oldId; // คนเก่าที่ยังไม่มีชื่อแสดง ให้ชื่อเดิมติดไปด้วย
+        await setDoc(doc(db, "users", newId), data);
+        await deleteDoc(doc(db, "users", oldId));
+        u.id = newId; u.data = data;
+    }
+
+    $('filterChips').addEventListener('click', e => {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+        filter = chip.dataset.f;
+        document.querySelectorAll('#filterChips .chip').forEach(c => c.classList.toggle('active', c === chip));
+        applyView(true);
+    });
+
+    // ---------- แผงแก้ไข ----------
+    window.openEditor = function(id) {
+        const u = id ? users.find(x => x.id === id) : null;
+        const d = u ? u.data : {};
+        editing = window.editing = { id: u ? u.id : null, pic: d.profilePic || '', history: Array.isArray(d.history) ? [...d.history] : [] };
+
+        $('drawerTitle').textContent = u ? `แก้ไข: ${nameOf(u.id, d)}` : '➕ เพิ่มสมาชิกใหม่';
+        $('eDisplay').value = u ? nameOf(u.id, d) : '';
+        $('eName').value = u ? u.id : '';
+        $('ePass').value = d.password || '';
+        $('eExp').value = Number(d.exp) || 0;
+        $('eMult').value = multOf(d.multiplier);
+        $('eWpm').value = Number(d.wpm) || 0;
+        $('eLatest').value = Number(d.latest_wpm) || 0;
+        $('eRenameHint').textContent = u ? 'เปลี่ยนไอดี = ผู้เล่นต้องใช้ไอดีใหม่ล็อกอิน (ข้อมูลย้ายตามไปครบ)' : '';
+        updateMultHint();
+        $('ePicStatus').textContent = '';
+        $('dangerZone').classList.toggle('hidden', !u);
+        $('eMeta').innerHTML = u ? `
+            <dt>ออนไลน์ล่าสุด</dt><dd>${d.last_online ? new Date(d.last_online).toLocaleString('th-TH') : '—'}</dd>
+            <dt>เล่นล่าสุด</dt><dd>${d.last_played ? new Date(d.last_played).toLocaleString('th-TH') : '—'}</dd>
+            <dt>ยศที่บันทึกไว้</dt><dd>${esc(d.rank || '—')}</dd>
+            <dt>ขนาดรูป</dt><dd>${d.profilePic ? (d.profilePic.startsWith('data:') ? Math.round(d.profilePic.length * 0.75 / 1024) + 'KB (เก็บใน Firebase)' : 'ลิงก์ภายนอก') : '—'}</dd>`
+            : '<dt>สถานะ</dt><dd>บัญชีใหม่</dd>';
+        renderPic();
+        renderHistory();
+        updateRankPreview();
+
+        $('drawer').classList.add('show');
+        $('drawer').setAttribute('aria-hidden', 'false');
+        $('backdrop').classList.add('show');
+        if (!u) setTimeout(() => $('eDisplay').focus(), 250);
+        document.querySelector('.drawer-body').scrollTop = 0;
+    };
+
+    window.closeEditor = function() {
+        $('drawer').classList.remove('show');
+        $('drawer').setAttribute('aria-hidden', 'true');
+        $('backdrop').classList.remove('show');
+        editing = window.editing = null;
+    };
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && editing && !document.querySelector('.dialog')) closeEditor(); });
+
+    function renderPic() { $('ePic').src = editing.pic || DEFAULT_PIC; }
+    window.setPic = function(url) { editing.pic = url; renderPic(); $('ePicStatus').textContent = url ? '' : 'จะลบรูปเมื่อกดบันทึก'; };
+
+    window.setPicFromUrl = async function() {
+        const url = await ask({ title: '🔗 ใส่ลิงก์รูป', text: 'วางลิงก์รูปหรือ GIF (ขึ้นต้นด้วย https://)', okText: 'ใช้ลิงก์นี้', input: { placeholder: 'https://...', value: editing.pic.startsWith('http') ? editing.pic : '' } });
+        if (!url) return;
+        if (!/^https?:\/\//i.test(url.trim())) return toast('ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://', 'err');
+        setPic(url.trim());
+        $('ePicStatus').textContent = 'จะใช้รูปนี้เมื่อกดบันทึก';
+    };
+
+    window.onAdminPicPicked = async function(e) {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file || !editing) return;
+        const status = $('ePicStatus');
+        status.innerHTML = '<span class="spin"></span> กำลังย่อรูป...';
+        try {
+            const r = await window.AvatarTools.prepare(file, msg => status.innerHTML = '<span class="spin"></span> ' + msg);
+            let url = r.inline;
+            if (!url) {
+                status.innerHTML = '<span class="spin"></span> GIF ใหญ่ กำลังอัปโหลด...';
+                try { url = await window.AvatarTools.uploadToImgBB(r.upload, IMGBB_API_KEY, p => status.innerHTML = `<span class="spin"></span> กำลังอัปโหลด ${p}%`); }
+                catch (err) { url = r.fallback; toast('ที่ฝากรูปล่ม ใช้ภาพนิ่งแทน', 'err'); }
+            }
+            setPic(url);
+            status.textContent = `พร้อมแล้ว (${Math.max(1, Math.round(r.bytes / 1024))}KB) กดบันทึกเพื่อใช้รูปนี้`;
+        } catch (err) {
+            status.textContent = '❌ ' + (err.message === 'decode' ? 'เปิดไฟล์นี้ไม่ได้' : err.message);
+        }
+    };
+
+    window.updateRankPreview = function() {
+        const exp = Number($('eExp').value) || 0;
+        const r = rankOf(exp);
+        const cur = r.current, next = r.next && r.next.exp > cur.exp ? r.next : null;
+        const pct = next ? Math.min(100, (exp - cur.exp) / (next.exp - cur.exp) * 100) : 100;
+        const icon = window.rankIconUrls ? window.rankIconUrls[cur.name] : '';
+        $('rankPreview').innerHTML = `${icon ? `<img src="${esc(icon)}">` : ''}<div style="flex:1">
+            <b>${esc(cur.name)}</b><span class="hint">${next ? `อีก ${fmt(next.exp - exp)} EXP ถึง ${esc(next.name)}` : 'ยศสูงสุดแล้ว'}</span>
+            <div class="bar"><i style="width:${pct}%"></i></div></div>`;
+    };
+    window.addExp = function(n) { $('eExp').value = Math.max(0, (Number($('eExp').value) || 0) + n); updateRankPreview(); };
+    window.setExpToNextRank = function() {
+        const r = rankOf($('eExp').value);
+        if (r.next && r.next.exp > r.current.exp) { $('eExp').value = r.next.exp; updateRankPreview(); }
+    };
+    window.setMult = function(n) { $('eMult').value = n; updateMultHint(); };
+    window.updateMultHint = function() {
+        const m = multOf($('eMult').value);
+        $('eMultHint').textContent = `ตัวอย่าง: พิมพ์ถูก 60 คำ × ${m} = ได้ ${fmt(Math.round(60 * m))} EXP`;
+    };
+
+    function renderHistory() {
+        const h = editing.history;
+        $('eHistory').innerHTML = h.length ? h.map((r, i) => `<div class="h-row"><b>${fmt(r.wpm)} WPM</b><span>${esc(r.date || '')}${r.acc ? ` • แม่น ${r.acc}%` : ''}</span>
+            <button class="icon-btn danger" style="width:28px;height:28px" onclick="removeHistory(${i})" title="ลบ">✕</button></div>`).join('')
+            : '<div class="hint">ยังไม่มีประวัติ</div>';
+    }
+    window.removeHistory = function(i) { editing.history.splice(i, 1); renderHistory(); };
+    window.clearHistory = function() { editing.history = []; renderHistory(); };
+
+    window.resetStats = async function() {
+        if (!await ask({ title: 'รีเซ็ตสถิติ?', text: 'EXP, WPM และประวัติจะเป็น 0 (ยังไม่บันทึกจนกว่าจะกดบันทึก)', okText: 'รีเซ็ต', danger: true })) return;
+        $('eExp').value = 0; $('eWpm').value = 0; $('eLatest').value = 0;
+        editing.history = [];
+        renderHistory(); updateRankPreview();
+    };
+
+    window.saveUser = async function() {
+        const id = $('eName').value.trim();
+        const displayName = $('eDisplay').value.trim().replace(/\s+/g, ' ') || id;
+        const password = $('ePass').value.trim();
+        if (!id || !password) return toast('ต้องมีไอดีและรหัสผ่าน', 'err');
+        if (id.includes('/')) return toast('ไอดีห้ามมีเครื่องหมาย /', 'err');
+
+        const exp = Math.max(0, parseInt($('eExp').value) || 0);
+        const fields = {
+            displayName,
+            password,
+            exp,
+            multiplier: multOf($('eMult').value),
+            wpm: Math.max(0, parseInt($('eWpm').value) || 0),
+            latest_wpm: Math.max(0, parseInt($('eLatest').value) || 0),
+            profilePic: editing.pic || '',
+            history: editing.history
+        };
+
+        const btn = $('saveBtn');
+        btn.disabled = true; btn.innerHTML = '<span class="spin"></span> กำลังบันทึก...';
+        try {
+            const oldId = editing.id;
+            if (!oldId) {
+                if ((await getDoc(doc(db, "users", id))).exists()) throw new Error(`ไอดี "${id}" มีคนใช้แล้ว`);
+                await setDoc(doc(db, "users", id), { ...fields, username: id, rank: rankOf(exp).current.name, created_at: Date.now() });
+                toast(`✅ เพิ่ม ${displayName} แล้ว`);
+            } else {
+                // เขียนเฉพาะช่องที่แอดมินแก้จริง → ไม่ทับ EXP/ประวัติที่ผู้เล่นเพิ่งได้ระหว่างเปิดแผงนี้ค้างไว้
+                const o = users.find(x => x.id === oldId).data;
+                const before = {
+                    displayName: nameOf(oldId, o), password: String(o.password ?? ''), exp: Number(o.exp) || 0,
+                    multiplier: multOf(o.multiplier), wpm: Number(o.wpm) || 0, latest_wpm: Number(o.latest_wpm) || 0,
+                    profilePic: o.profilePic || '', history: o.history || []
+                };
+                const changes = {};
+                for (const k in fields) {
+                    const same = k === 'history' ? JSON.stringify(fields[k]) === JSON.stringify(before[k]) : fields[k] === before[k];
+                    if (!same) changes[k] = fields[k];
+                }
+                if ('exp' in changes) changes.rank = rankOf(exp).current.name;
+
+                if (oldId !== id) await renameUser(oldId, id, changes);
+                else if (Object.keys(changes).length) await setDoc(doc(db, "users", id), changes, { merge: true });
+                toast(oldId !== id ? `✅ เปลี่ยนไอดี ${oldId} → ${id} แล้ว` : Object.keys(changes).length ? '✅ บันทึกแล้ว' : 'ไม่มีอะไรเปลี่ยน');
+            }
+            closeEditor();
+            loadAllUsers();
+        } catch (err) {
+            console.error(err);
+            toast('❌ ' + err.message, 'err');
+        }
+        btn.disabled = false; btn.innerHTML = '💾 บันทึก';
+    };
+
+    window.deleteUser = async function(id) {
+        if (!id) return;
+        const typed = await ask({ title: `🗑️ ลบ "${id}" ?`, text: 'ลบแล้วกู้คืนไม่ได้ ข้อมูลทั้งหมดหายถาวร<br>พิมพ์ชื่อผู้เล่นเพื่อยืนยัน', okText: 'ลบถาวร', danger: true, input: { placeholder: id } });
+        if (typed === null) return;
+        if (typed.trim() !== id) return toast('ชื่อไม่ตรง ยกเลิกการลบ', 'err');
+        try {
+            await deleteDoc(doc(db, "users", id));
+            toast(`ลบ ${id} แล้ว`);
+            if (editing && editing.id === id) closeEditor();
+            users = users.filter(u => u.id !== id);
+            renderStats(); applyView(false);
+        } catch (err) { toast('❌ ลบไม่สำเร็จ: ' + err.message, 'err'); }
+    };
+
+    // ---------- เครื่องมือทั้งเซิร์ฟ ----------
+    async function batchAll(build) {
+        // Firestore เขียนได้ทีละไม่เกิน 500 รายการต่อชุด
+        for (let i = 0; i < users.length; i += 450) {
+            const batch = writeBatch(db);
+            users.slice(i, i + 450).forEach(u => batch.set(doc(db, "users", u.id), build(u), { merge: true }));
+            await batch.commit();
+        }
+    }
+
+    window.openServerTools = async function() {
+        const choice = await new Promise(resolve => {
+            const box = document.createElement('div');
+            box.className = 'dialog';
+            box.innerHTML = `<div class="dialog-card"><h3>⚡ เครื่องมือทั้งเซิร์ฟ</h3><p>มีผลกับผู้เล่นทั้งหมด ${fmt(users.length)} คน</p>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <button class="btn" data-c="mult">🎯 ตั้งตัวคูณ EXP ให้ทุกคน (อีเวนต์ EXP x2 ฯลฯ)</button>
+                    <button class="btn" data-c="gift">🎁 แจก EXP ให้ทุกคน</button>
+                    <button class="btn" data-c="pics">🖼️ ดึงรูปโปรไฟล์เก่าจากชีตเข้า Firebase</button>
+                    <button class="btn" data-c="0">ปิด</button>
+                </div></div>`;
+            box.addEventListener('click', e => { const c = e.target.dataset.c; if (c !== undefined || e.target === box) { box.remove(); resolve(c && c !== '0' ? c : null); } });
+            document.body.append(box);
+        });
+        if (choice === 'mult') {
+            const v = await ask({ title: '🎯 ตั้งตัวคูณทุกคน', text: 'ปกติคือ 10 (มีผลเมื่อผู้เล่นรีเฟรชหน้าเว็บ)', okText: 'ตั้งค่า', input: { type: 'number', value: '10' } });
+            const n = Number(v);
+            if (v === null || !(n >= 0)) return;
+            await runBulk(`ตั้งตัวคูณ x${n} ให้ทุกคน`, () => ({ multiplier: n }), u => { u.data.multiplier = n; });
+        }
+        if (choice === 'gift') {
+            const v = await ask({ title: '🎁 แจก EXP ทุกคน', text: 'ใส่จำนวน EXP ที่จะบวกให้ทุกคน (ใส่ติดลบ = หัก)', okText: 'แจกเลย', input: { type: 'number', value: '1000' } });
+            const n = parseInt(v);
+            if (v === null || !n) return;
+            await runBulk(`แจก ${fmt(n)} EXP ให้ทุกคน`, () => ({ exp: increment(n) }), u => { u.data.exp = Math.max(0, (u.data.exp || 0) + n); });
+        }
+        if (choice === 'pics') await importSheetPics();
+    };
+
+    // รูปจากระบบเก่าอยู่ในชีตอย่างเดียว → คัดลอกเข้า Firebase ครั้งเดียว (เติมเฉพาะคนที่ยังไม่มีรูป ไม่ทับรูปใหม่)
+    async function importSheetPics() {
+        toast('⏳ กำลังโหลดรูปจากชีต (ชีตช้า อาจนาน 30 วินาที)...');
+        let sheet;
+        try {
+            sheet = await (await fetch(SCRIPT_URL + "?action=getProfiles&_t=" + Date.now())).json();
+        } catch (err) { return toast('❌ โหลดชีตไม่ได้: ' + err.message, 'err'); }
+
+        const byId = new Map(users.map(u => [u.id, u]));
+        const todo = Object.entries(sheet || {}).filter(([name, pic]) => {
+            const u = byId.get(name);
+            return u && !u.data.profilePic && typeof pic === 'string' && /^(https?:|data:image\/)/.test(pic);
+        });
+        if (!todo.length) return toast('ไม่มีรูปเก่าที่ต้องดึงแล้ว ทุกคนที่มีรูปในชีตมีรูปใน Firebase ครบ');
+        if (!await ask({ title: '🖼️ ดึงรูปเก่า?', text: `พบ ${fmt(todo.length)} คนที่มีรูปในชีตแต่ไม่มีใน Firebase<br>จะคัดลอกให้เฉพาะคนที่ยังไม่มีรูป (ไม่ทับรูปที่ตั้งใหม่)`, okText: 'ดึงรูปเลย' })) return;
+
+        toast(`⏳ กำลังย่อและบันทึก ${fmt(todo.length)} รูป...`);
+        let done = 0;
+        try {
+            for (let i = 0; i < todo.length; i += 100) {
+                const batch = writeBatch(db);
+                for (const [name, pic] of todo.slice(i, i + 100)) {
+                    let url = pic;
+                    // รูปเก่าที่ฝังในชีตบางรูปใหญ่ → ย่อให้เท่ารูปใหม่ ตารางอันดับจะได้โหลดไว
+                    if (pic.startsWith('data:') && pic.length > 30000) {
+                        try {
+                            const blob = await (await fetch(pic)).blob();
+                            const r = await window.AvatarTools.prepare(new File([blob], 'old', { type: blob.type }));
+                            if (r.inline) url = r.inline;
+                        } catch (e) { console.warn('ย่อรูปเก่าไม่ได้ ใช้ของเดิม:', name, e); }
+                    }
+                    batch.set(doc(db, "users", name), { profilePic: url }, { merge: true });
+                    byId.get(name).data.profilePic = url;
+                    done++;
+                }
+                await batch.commit();
+            }
+            applyView(false);
+            toast(`✅ ดึงรูปเก่าคืนมาแล้ว ${fmt(done)} คน`);
+        } catch (err) {
+            toast(`❌ ทำได้ ${fmt(done)} คนแล้วพัง: ${err.message}`, 'err');
+        }
+    }
+
+    async function runBulk(label, build, applyLocal) {
+        if (!await ask({ title: 'ยืนยัน?', text: `${esc(label)} (${fmt(users.length)} คน)`, okText: 'ยืนยัน', danger: true })) return;
+        toast('⏳ กำลังทำ...');
+        try {
+            await batchAll(build);
+            users.forEach(applyLocal);
+            renderStats(); applyView(false);
+            toast('✅ ' + label + ' เรียบร้อย');
+        } catch (err) { toast('❌ ' + err.message, 'err'); }
+    }
+
+    // ---------- เริ่ม ----------
+    if (sessionStorage.getItem('adminUnlocked') === '1') startApp();
+</script>
+</body>
+</html>

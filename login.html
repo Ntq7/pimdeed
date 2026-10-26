@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#eef2ff">
+    <title>เข้าสู่ระบบ - ฝึกพิมพ์คนกากๆ</title>
+    <script>
+        // ล็อกอินอยู่แล้ว → ไปหน้าเกมเลย ไม่ต้องโหลดอะไรต่อ
+        if (localStorage.getItem('currentUser')) location.replace("index.html");
+    </script>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/RkGB4YsP/image.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #007aff; --indigo: #5856d6; --pink: #ff2d55; --orange: #ff9500; --green: #34c759; --red: #ff3b30;
+            --text: #1c1c1e; --text-2: #6c6c70; --text-3: #aeaeb2;
+            --fill: rgba(118, 118, 128, 0.12); --fill-2: rgba(118, 118, 128, 0.2);
+            --glass: rgba(255, 255, 255, 0.66); --glass-border: rgba(255, 255, 255, 0.85);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; min-height: 100%; }
+        body {
+            min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Noto Sans Thai', sans-serif;
+            color: var(--text); background: #eef2ff; overflow-x: hidden; position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+        button, input { font: inherit; color: inherit; }
+
+        /* พื้นหลังสีสดลอยไปมา แบบวอลเปเปอร์ iOS */
+        .wallpaper { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: linear-gradient(160deg, #f5f7ff 0%, #fdf2f8 50%, #fff7ed 100%); }
+        .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.75; animation: drift 18s ease-in-out infinite alternate; }
+        .b1 { width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax; background: radial-gradient(circle at 30% 30%, #7aa7ff, #5856d6 70%); }
+        .b2 { width: 40vmax; height: 40vmax; right: -12vmax; top: 10vh; background: radial-gradient(circle at 40% 40%, #ff8fb1, #ff2d55 75%); animation-delay: -6s; }
+        .b3 { width: 38vmax; height: 38vmax; left: 20vw; bottom: -18vmax; background: radial-gradient(circle at 50% 50%, #ffd36b, #ff9500 75%); animation-delay: -11s; }
+        .b4 { width: 26vmax; height: 26vmax; left: -6vmax; bottom: 6vh; background: radial-gradient(circle, #7ef0d2, #30d5c8 75%); animation-delay: -3s; opacity: 0.55; }
+        @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(6vmax, 4vmax) scale(1.12); } }
+        @media (prefers-reduced-motion: reduce) { .blob { animation: none; } }
+
+        .card {
+            width: 100%; max-width: 410px; padding: 30px 26px 24px; border-radius: 34px;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 30px 80px rgba(60, 64, 120, 0.18), 0 8px 24px rgba(60, 64, 120, 0.08);
+            animation: rise 0.6s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+        }
+        @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+        .brand { text-align: center; margin-bottom: 22px; }
+        .app-icon {
+            width: 68px; height: 68px; margin: 0 auto 12px; border-radius: 18px; display: grid; place-items: center;
+            background: linear-gradient(145deg, #5ac8fa 0%, #007aff 45%, #5856d6 100%);
+            box-shadow: 0 10px 24px rgba(0, 122, 255, 0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+        .app-icon img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+        .brand h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.3px; }
+        .brand p { margin: 4px 0 0; font-size: 14px; color: var(--text-2); }
+
+        /* สวิตช์แบบ iOS (segmented control) */
+        .segmented { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 12px; background: var(--fill); margin-bottom: 22px; }
+        .segmented button { position: relative; z-index: 1; height: 36px; border: none; background: none; border-radius: 9px; font-size: 14.5px; font-weight: 600; color: var(--text-2); cursor: pointer; transition: color 0.2s; }
+        .segmented button[aria-selected="true"] { color: var(--text); }
+        .seg-pill { position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: 36px; border-radius: 9px; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04); transition: transform 0.3s cubic-bezier(0.3, 0.9, 0.3, 1); }
+        .segmented[data-tab="register"] .seg-pill { transform: translateX(100%); }
+
+        form { display: flex; flex-direction: column; gap: 12px; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field > span { font-size: 13px; font-weight: 600; color: var(--text-2); padding-left: 4px; }
+        .input-wrap { position: relative; display: flex; align-items: center; }
+        .input-wrap .icon { position: absolute; left: 14px; font-size: 16px; opacity: 0.55; pointer-events: none; }
+        .input-wrap input {
+            width: 100%; height: 52px; padding: 0 46px 0 42px; border-radius: 14px; border: 1px solid transparent;
+            background: var(--fill); font-size: 16px; outline: none;
+            transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .input-wrap input::placeholder { color: var(--text-3); }
+        .input-wrap input:focus { background: #fff; border-color: rgba(0,122,255,0.55); box-shadow: 0 0 0 4px rgba(0,122,255,0.15); }
+        .input-wrap input.bad { border-color: rgba(255,59,48,0.6); box-shadow: 0 0 0 4px rgba(255,59,48,0.12); }
+        .eye { position: absolute; right: 6px; width: 38px; height: 38px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 17px; opacity: 0.55; transition: opacity 0.15s, background 0.15s; }
+        .eye:hover { opacity: 0.9; background: var(--fill); }
+        .hint { font-size: 12.5px; color: var(--text-2); padding-left: 4px; min-height: 0; }
+        .hint.warn { color: var(--orange); font-weight: 600; }
+
+        .strength { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 0 4px; }
+        .strength i { height: 4px; border-radius: 4px; background: var(--fill-2); transition: background 0.25s; }
+        .strength[data-level="1"] i:nth-child(-n+1) { background: var(--red); }
+        .strength[data-level="2"] i:nth-child(-n+2) { background: var(--orange); }
+        .strength[data-level="3"] i:nth-child(-n+3) { background: #ffcc00; }
+        .strength[data-level="4"] i { background: var(--green); }
+
+        .error {
+            display: none; align-items: flex-start; gap: 8px; padding: 11px 14px; border-radius: 14px;
+            background: rgba(255,59,48,0.1); color: #d70015; font-size: 14px; font-weight: 600; line-height: 1.45;
+        }
+        .error.show { display: flex; animation: shake 0.4s; }
+        @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+        .primary {
+            height: 54px; margin-top: 6px; border: none; border-radius: 16px; cursor: pointer;
+            font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.2px;
+            background: linear-gradient(135deg, #0a84ff, #5856d6);
+            box-shadow: 0 10px 24px rgba(10, 132, 255, 0.35);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: transform 0.15s, box-shadow 0.15s, filter 0.15s, opacity 0.15s;
+        }
+        .primary.alt { background: linear-gradient(135deg, #ff375f, #ff9f0a); box-shadow: 0 10px 24px rgba(255, 55, 95, 0.32); }
+        .primary:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+        .primary:active:not(:disabled) { transform: scale(0.98); }
+        .primary:disabled { opacity: 0.55; cursor: not-allowed; }
+        .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.45); border-top-color: #fff; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .foot { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+        .foot a { color: var(--blue); text-decoration: none; font-weight: 600; }
+        .foot a:hover { text-decoration: underline; }
+        .safe { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(52,199,89,0.12); color: #248a3d; font-weight: 600; font-size: 12px; }
+
+        .hidden { display: none !important; }
+        @media (max-width: 380px) { .card { padding: 26px 18px 20px; border-radius: 28px; } .brand h1 { font-size: 23px; } }
+    </style>
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
+
+<main class="card">
+    <div class="brand">
+        <div class="app-icon"><img src="https://i.ibb.co/RkGB4YsP/image.png" alt=""></div>
+        <h1>ฝึกพิมพ์</h1>
+        <p>เว็บฝึกพิมพ์ สำหรับคนกากๆ</p>
+    </div>
+
+    <div class="segmented" id="seg" data-tab="login" role="tablist">
+        <div class="seg-pill"></div>
+        <button type="button" role="tab" aria-selected="true" onclick="switchAuth('login')">เข้าสู่ระบบ</button>
+        <button type="button" role="tab" aria-selected="false" onclick="switchAuth('register')">สมัครสมาชิก</button>
+    </div>
+
+    <!-- เข้าสู่ระบบ: ใช้ไอดี + รหัสผ่าน -->
+    <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+        <label class="field"><span>ไอดี</span>
+            <div class="input-wrap"><span class="icon">👤</span>
+                <input id="loginId" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="ไอดีที่ใช้เข้าสู่ระบบ" maxlength="30">
+            </div>
+        </label>
+        <label class="field"><span>รหัสผ่าน</span>
+            <div class="input-wrap"><span class="icon">🔒</span>
+                <input id="loginPass" type="password" autocomplete="current-password" placeholder="รหัสผ่าน">
+                <button type="button" class="eye" onclick="toggleEye(this)" aria-label="แสดงรหัสผ่าน">👁️</button>
+            </div>
+        </label>
+        <div class="hint warn hidden" id="capsLogin">⇪ Caps Lock เปิดอยู่</div>
+        <div class="error" id="loginError" role="alert"></div>
+        <button class="primary" id="loginBtn">เข้าสู่ระบบ</button>
+    </form>
+
+    <!-- สมัครสมาชิก: ชื่อที่แสดง + ไอดี + รหัสผ่าน -->
+    <form id="registerForm" class="hidden" onsubmit="handleRegister(event)" novalidate>
+        <label class="field"><span>ชื่อของคุณ (ที่คนอื่นจะเห็น)</span>
+            <div class="input-wrap"><span class="icon">😎</span>
+                <input id="regName" autocomplete="nickname" placeholder="เช่น กูจะรู้หรอมึงจะตั้งอะไร" maxlength="30">
+            </div>
+        </label>
+        <label class="field"><span>ไอดีสำหรับเข้าสู่ระบบ</span>
+            <div class="input-wrap"><span class="icon">👤</span>
+                <input id="regId" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="ภาษาอังกฤษหรือตัวเลข 3-20 ตัว" maxlength="20">
+            </div>
+            <span class="hint" id="regIdHint">ใช้ a-z, 0-9 และ _ เท่านั้น (ไม่ต้องกด Shift)</span>
+        </label>
+        <label class="field"><span>รหัสผ่าน</span>
+            <div class="input-wrap"><span class="icon">🔒</span>
+                <input id="regPass" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัว" oninput="updateStrength()">
+                <button type="button" class="eye" onclick="toggleEye(this)" aria-label="แสดงรหัสผ่าน">👁️</button>
+            </div>
+            <div class="strength" id="strength" data-level="0"><i></i><i></i><i></i><i></i></div>
+        </label>
+        <label class="field"><span>ยืนยันรหัสผ่าน</span>
+            <div class="input-wrap"><span class="icon">✅</span>
+                <input id="regPass2" type="password" autocomplete="new-password" placeholder="พิมพ์รหัสผ่านอีกครั้ง">
+            </div>
+        </label>
+        <div class="hint warn hidden" id="capsReg">⇪ Caps Lock เปิดอยู่</div>
+        <div class="error" id="regError" role="alert"></div>
+        <button class="primary alt" id="regBtn">สมัครแล้วไปพิมพ์เลย</button>
+    </form>
+
+    <div class="foot">
+        <span class="safe">🛡️ รหัสผ่านถูกซ่อนระหว่างพิมพ์ • ล็อกชั่วคราวเมื่อใส่ผิดหลายครั้ง</span>
+        <a href="https://t.me/x_Haoyun66" target="_blank" rel="noopener">ลืมไอดีหรือรหัสผ่าน? ติดต่อแอดมิน</a>
+    </div>
+</main>
+
+<script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const fbConfig = {
+        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw",
+        authDomain: "pimthai-e16c3.firebaseapp.com",
+        projectId: "pimthai-e16c3",
+        storageBucket: "pimthai-e16c3.firebasestorage.app",
+        messagingSenderId: "955936818307",
+        appId: "1:955936818307:web:273fa00d07f36894d207b6"
+    };
+    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    const db = getFirestore(app);
+
+    const $ = id => document.getElementById(id);
+    const MAX_TRIES = 5, LOCK_MS = 30 * 1000;
+    const ID_RULE = /^[a-z0-9_]{3,20}$/;
+
+    // ---------- ตัวช่วยหน้าตา ----------
+    window.switchAuth = function(tab) {
+        $('seg').dataset.tab = tab;
+        $('seg').querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-selected', String((i === 0) === (tab === 'login'))));
+        $('loginForm').classList.toggle('hidden', tab !== 'login');
+        $('registerForm').classList.toggle('hidden', tab !== 'register');
+        hideError('loginError'); hideError('regError');
+        setTimeout(() => (tab === 'login' ? $('loginId') : $('regName')).focus(), 50);
+    };
+
+    window.toggleEye = function(btn) {
+        const input = btn.parentElement.querySelector('input');
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.textContent = show ? '🙈' : '👁️';
+        btn.setAttribute('aria-label', show ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน');
+    };
+
+    function showError(id, msg, field) {
+        const el = $(id);
+        el.innerHTML = '⚠️ <span>' + msg + '</span>';
+        el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+        document.querySelectorAll('.input-wrap input.bad').forEach(i => i.classList.remove('bad'));
+        if (field) { $(field).classList.add('bad'); $(field).focus(); }
+    }
+    function hideError(id) { $(id).classList.remove('show'); document.querySelectorAll('.input-wrap input.bad').forEach(i => i.classList.remove('bad')); }
+
+    function setBusy(btn, busy, label) {
+        btn.disabled = busy;
+        btn.innerHTML = busy ? '<span class="spinner"></span>' : label;
+    }
+
+    // เตือน Caps Lock (ใส่รหัสผิดเพราะลืมปิด Caps Lock บ่อยมาก)
+    document.addEventListener('keydown', e => {
+        if (!e.getModifierState) return;
+        const on = e.getModifierState('CapsLock');
+        $('capsLogin').classList.toggle('hidden', !on || $('loginForm').classList.contains('hidden'));
+        $('capsReg').classList.toggle('hidden', !on || $('registerForm').classList.contains('hidden'));
+    });
+
+    window.updateStrength = function() {
+        const p = $('regPass').value;
+        let s = 0;
+        if (p.length >= 6) s++;
+        if (p.length >= 10) s++;
+        if (/[a-zA-Zก-๙]/.test(p) && /\d/.test(p)) s++;
+        if (/[^a-zA-Z0-9ก-๙]/.test(p) || (/[a-z]/.test(p) && /[A-Z]/.test(p))) s++;
+        $('strength').dataset.level = p ? Math.max(1, s) : 0;
+    };
+
+    $('regId').addEventListener('input', e => {
+        const v = e.target.value.toLowerCase().replace(/\s/g, '');
+        if (v !== e.target.value) e.target.value = v;
+        $('regIdHint').textContent = !v || ID_RULE.test(v) ? 'ใช้ a-z, 0-9 และ _ เท่านั้น (ไม่ต้องกด Shift)' : '❌ ใช้ได้แค่ a-z, 0-9 และ _ ยาว 3-20 ตัว';
+    });
+
+    // ---------- กันเดารหัส: ผิด 5 ครั้ง ล็อก 30 วิ ----------
+    function lockState() {
+        try { return JSON.parse(localStorage.getItem('loginLock') || '{"fails":0,"until":0}'); } catch (e) { return { fails: 0, until: 0 }; }
+    }
+    function saveLock(s) { try { localStorage.setItem('loginLock', JSON.stringify(s)); } catch (e) {} }
+    let lockTimer = null;
+    function startLockCountdown() {
+        clearInterval(lockTimer);
+        const tick = () => {
+            const left = Math.ceil((lockState().until - Date.now()) / 1000);
+            if (left <= 0) { clearInterval(lockTimer); setBusy($('loginBtn'), false, 'เข้าสู่ระบบ'); hideError('loginError'); return; }
+            $('loginBtn').disabled = true;
+            $('loginBtn').textContent = `ลองใหม่ได้ใน ${left} วินาที`;
+        };
+        tick();
+        lockTimer = setInterval(tick, 1000);
+    }
+    if (lockState().until > Date.now()) startLockCountdown();
+
+    // ---------- เข้าสู่ระบบ ----------
+    async function findAccount(id) {
+        let snap = await getDoc(doc(db, "users", id));
+        // ไอดีใหม่เป็นตัวเล็กหมด เผื่อคนพิมพ์ตัวใหญ่มา
+        if (!snap.exists() && id !== id.toLowerCase()) snap = await getDoc(doc(db, "users", id.toLowerCase()));
+        return snap.exists() ? snap : null;
+    }
+
+    window.handleLogin = async function(e) {
+        e.preventDefault();
+        if (lockState().until > Date.now()) return startLockCountdown();
+        const id = $('loginId').value.trim();
+        const pass = $('loginPass').value;
+        if (!id) return showError('loginError', 'กรอกไอดีก่อน', 'loginId');
+        if (!pass) return showError('loginError', 'กรอกรหัสผ่านก่อน', 'loginPass');
+        if (id.includes('/')) return showError('loginError', 'ไอดีหรือรหัสผ่านไม่ถูกต้อง', 'loginId');
+
+        const btn = $('loginBtn');
+        setBusy(btn, true);
+        try {
+            const snap = await findAccount(id);
+            const data = snap ? snap.data() : null;
+            // ระบบเก่าตัดช่องว่างหัวท้ายรหัสก่อนบันทึก เลยเทียบทั้งแบบตรงๆ และแบบตัดช่องว่าง
+            if (!data || (String(data.password) !== pass && String(data.password) !== pass.trim())) {
+                const s = lockState();
+                s.fails = (s.fails || 0) + 1;
+                if (s.fails >= MAX_TRIES) { s.fails = 0; s.until = Date.now() + LOCK_MS; }
+                saveLock(s);
+                setBusy(btn, false, 'เข้าสู่ระบบ');
+                if (s.until > Date.now()) { showError('loginError', 'ใส่ผิดหลายครั้งเกินไป รอสักครู่แล้วลองใหม่'); return startLockCountdown(); }
+                return showError('loginError', `ไอดีหรือรหัสผ่านไม่ถูกต้อง (เหลืออีก ${MAX_TRIES - s.fails} ครั้ง)`, 'loginPass');
+            }
+            saveLock({ fails: 0, until: 0 });
+            localStorage.setItem('currentUser', snap.id);
+            localStorage.setItem('cachedName', data.displayName || snap.id);
+            location.replace("index.html");
+        } catch (err) {
+            console.error(err);
+            setBusy(btn, false, 'เข้าสู่ระบบ');
+            showError('loginError', 'เชื่อมต่อไม่ได้ ลองเช็กเน็ตแล้วลองใหม่');
+        }
+    };
+
+    // ---------- สมัครสมาชิก ----------
+    window.handleRegister = async function(e) {
+        e.preventDefault();
+        const name = $('regName').value.trim().replace(/\s+/g, ' ');
+        const id = $('regId').value.trim().toLowerCase();
+        const pass = $('regPass').value;
+        const pass2 = $('regPass2').value;
+
+        if (!name) return showError('regError', 'ใส่ชื่อของคุณด้วย คนอื่นจะได้รู้ว่าใคร', 'regName');
+        if (!ID_RULE.test(id)) return showError('regError', 'ไอดีใช้ได้แค่ a-z, 0-9 และ _ ยาว 3-20 ตัว', 'regId');
+        if (pass.length < 6) return showError('regError', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัว', 'regPass');
+        if (pass.toLowerCase() === id || pass === name) return showError('regError', 'รหัสผ่านห้ามเหมือนไอดีหรือชื่อ', 'regPass');
+        if (pass !== pass2) return showError('regError', 'ยืนยันรหัสผ่านไม่ตรงกัน', 'regPass2');
+
+        const btn = $('regBtn');
+        setBusy(btn, true);
+        try {
+            const ref = doc(db, "users", id);
+            if ((await getDoc(ref)).exists()) {
+                setBusy(btn, false, 'สมัครแล้วไปพิมพ์เลย');
+                return showError('regError', `ไอดี "${id}" มีคนใช้แล้ว ลองไอดีอื่น`, 'regId');
+            }
+            await setDoc(ref, {
+                username: id, displayName: name, password: pass,
+                wpm: 0, latest_wpm: 0, exp: 0, multiplier: 10, rank: "ทหารฝึก", profilePic: "", history: [],
+                created_at: Date.now(), last_online: Date.now()
+            });
+            localStorage.setItem('currentUser', id);
+            localStorage.setItem('cachedName', name);
+            location.replace("index.html");
+        } catch (err) {
+            console.error(err);
+            setBusy(btn, false, 'สมัครแล้วไปพิมพ์เลย');
+            showError('regError', 'สมัครไม่สำเร็จ ลองใหม่อีกครั้ง');
+        }
+    };
+</script>
+</body>
+</html>

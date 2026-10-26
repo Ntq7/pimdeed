@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คนกากๆฝึกพิมพ์</title>
+    <script>
+        // 🛡️ ด่านตรวจคนเข้าเมือง (เช็กก่อนโหลดอย่างอื่น ไม่ต้องรอโหลดทั้งหน้าแล้วค่อยเด้ง)
+        window.currentUser = localStorage.getItem('currentUser') || localStorage.getItem('isLoggedIn');
+        if (!window.currentUser) window.location.replace("login.html");
+    </script>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/RkGB4YsP/image.png">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Chakra+Petch:wght@400;700&family=Press+Start+2P&family=VT323&family=Teko:wght@500;600;700&family=Mali:wght@500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css?v=106">
+</head>
+<body>
+<script>
+    // 🎨 ใส่ธีมทันที กันจอกระพริบเป็นธีมมืดก่อนแล้วค่อยเปลี่ยน
+    (function() { var t = localStorage.getItem('theme_preference'); if (t && t !== 'default') document.body.className = t; })();
+</script>
+
+<button id="btnOpenTheme" onclick="openThemeModal()">เปลี่ยนธีม <span class="new-blink-text">NEW</span></button>
+
+<div class="ticker-wrap" id="tickerWrap">
+    <div class="ticker-content" id="tickerContent">📢 แป๊บไอ้สัสนรก</div>
+</div>
+
+<div class="main-container" id="gameMain">
+    <div class="header-row">
+        <h1 style="margin-bottom: 0;">ฝึกพิมพ์ สำหรับคนว่างๆ ไม่มีลูกค้า</h1>
+        
+        <div class="top-actions">
+            <button class="btn-top btn-top-gold" onclick="showRanking()">
+                <img src="https://i.ibb.co/7dztkrMV/image.png" alt=""> อันดับความเร็วสูงสุด
+            </button>
+            <button class="btn-top btn-top-sky" onclick="showRankBoard()">
+                <img src="https://img2.pic.in.th/imagec45e19e0556aa82c.png" alt=""> ทำเนียบยศ
+            </button>
+            <div id="onlineBadge" class="online-badge">
+                <span class="online-dot"></span> ออนไลน์ <span id="onlineCount">1</span> คน
+            </div>
+
+            <div class="menu-container">
+                <button class="hamburger-btn" onclick="toggleActionMenu(event)" aria-label="เมนู"><span></span><span></span><span></span></button>
+                <div class="dropdown-menu" id="actionMenu">
+                    <button class="dropdown-item" onclick="closeActionMenu(); showEditName();">
+                        <span class="dd-icon">✏️</span><span class="dd-text">เปลี่ยนชื่อ<small>ชื่อที่คนอื่นเห็น</small></span>
+                    </button>
+                    <button class="dropdown-item" onclick="closeActionMenu(); pickAvatar();">
+                        <span class="dd-icon">🖼️</span><span class="dd-text">เปลี่ยนรูปโปรไฟล์<small>อัปรูปใหม่ได้เลย</small></span><span class="dd-badge">NEW</span>
+                    </button>
+                    <button class="dropdown-item" onclick="closeActionMenu(); showChangePassword();">
+                        <span class="dd-icon">🔑</span><span class="dd-text">เปลี่ยนรหัสผ่าน</span>
+                    </button>
+                    <button class="dropdown-item" onclick="closeActionMenu(); showHistory();">
+                        <span class="dd-icon">📜</span><span class="dd-text">ประวัติการพิมพ์กากๆ<small>50 ตาล่าสุด ดูได้ทุกเครื่อง</small></span>
+                    </button>
+                    <div class="dropdown-sep"></div>
+                    <button class="dropdown-item dropdown-danger" onclick="closeActionMenu(); showLogoutConfirm();">
+                        <span class="dd-icon">🚪</span><span class="dd-text">ออกจากระบบ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="user-profile-card">
+        <div class="profile-left">
+            <div class="profile-pic-wrapper" onclick="openImageViewer(document.getElementById('userProfilePic').src)">
+                <img id="userProfilePic" src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';">
+                <button class="profile-pic-edit" onclick="event.stopPropagation(); pickAvatar();" title="เปลี่ยนรูปโปรไฟล์" aria-label="เปลี่ยนรูปโปรไฟล์">📷</button>
+            </div>
+            
+            <div class="exp-wrapper">
+                <div class="user-name-rank" style="display: flex; justify-content: flex-start; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <span class="name-text" id="displayUser">Unknown</span>
+                    <span id="rankIconSmallDisplay"></span>
+                    <span class="rank-text" id="rankTextDisplay">ทหารฝึก</span>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="exp-bar-bg" style="flex: 1;">
+                        <div class="exp-bar-fill" id="expBarFill"></div>
+                        <div class="exp-numbers" id="expNumbersDisplay">0 / 3500 EXP</div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); min-width: max-content;">
+                        <div id="nextRankIconDisplay" style="display: flex; align-items: center;"></div>
+                        <div style="display: flex; flex-direction: column; line-height: 1.2; text-align: left;">
+                            <span style="font-size: 9px; color: #94a3b8;">ยศถัดไป</span>
+                            <span id="nextRankTextDisplay" style="font-size: 11px; font-weight: bold; color: #cbd5e1;">พลทหาร</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right; min-width: 150px;">
+            <span style="font-size: 12px; color: #94a3b8; display: block;">สถิติสูงสุดของมึง</span>
+            <span style="font-size: 26px; font-weight: bold; color: var(--highlight);"><b id="bestWPM">0</b> <span style="font-size:14px; color:#fff;">WPM</span></span>
+        </div>
+    </div>
+
+    <h2 style="font-size: 16px; color: #f1f5f9; text-shadow: 0 0 5px #818cf8, 0 0 10px #818cf8, 0 0 20px #818cf8; margin-bottom: 15px; text-align: center; letter-spacing: 1.5px; word-spacing: 2px; line-height: 1.6;">ระบบอัปเดตแล้ว ใส่รูปโปรไฟล์ใหม่นะครับ (กดที่ 3 ขีดข้างบนได้เลย)</h2>
+
+    <div class="typing-card">
+        <div class="display-window">
+            <div id="wordContainer"></div>
+        </div>
+        
+        <div class="controls-row">
+            <input type="text" id="userInput" placeholder=" ฝึกพิมพ์ด่าลูกค้านะ ไอ้เวร" autocomplete="off">
+            <div class="timer-badge" id="timer">60</div>
+            <button class="btn-refresh" onclick="resetGame()">🔄</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="themeModal">
+    <div class="modal-card" style="max-width: 750px; padding: 30px;">
+        <span class="close-modal-x" onclick="closeModal('themeModal')" style="font-family: sans-serif;">×</span>
+        <h2 style="margin-top: 0; margin-bottom: 5px;"><img src="https://i.ibb.co/G313Vvxz/image.png" style="width: 50px; height: 50px; object-fit: contain; vertical-align: middle;"> เ ลื อ ก ธี ม ข อ ง มึ ง</h2>
+        <p style="margin-top: 0; margin-bottom: 20px;">สลับโหมดตามอารมณ์ความเดือดได้เลย!</p>
+        
+        <div class="theme-selector-grid">
+            <button class="theme-option-btn" id="btn-theme-sf" onclick="selectTheme('theme-sf')">
+                <span class="theme-icon"><img loading="lazy" src="https://play-lh.googleusercontent.com/NytYEXtRpDKvuebqOe8SxqrnFvBqJzgcCykgr6DzGFaOEPbCPpSca-8xPdVU0YSP08I" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcc00">SF (ทหาร)</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-pb" onclick="selectTheme('theme-pb')">
+                <span class="theme-icon"><img loading="lazy" src="https://play-lh.googleusercontent.com/IGOlY-TMU0cGW_I8EFKBkLACxPLu1TQqbqaqx7NUsGMyjNWIO1NdhwdBrq-71pUAHw" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00aaff">PB</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-songkran" onclick="selectTheme('theme-songkran')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/BVBN0Mvw/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00bfff">สงกรานต์</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-cny" onclick="selectTheme('theme-cny')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/j93YBRj6/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffd700">ตรุษจีน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-valen" onclick="selectTheme('theme-valen')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/wFJ7gZY0/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff1493">วาเลนไทน์</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-hell" onclick="selectTheme('theme-hell')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/HL0FMrSq/image.png" style="width: 80px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff4500">นรกเดือด</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-space" onclick="selectTheme('theme-space')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/HTZgBTKX/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ffff">จักรวาล</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-halloween" onclick="selectTheme('theme-halloween')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/KzrVDdXc/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff7518">ฮาโลวีน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-liv" onclick="selectTheme('theme-liv')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/0V9gZwh4/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#c8102e">LIVERPOOL</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-manu" onclick="selectTheme('theme-manu')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1J0yzxkK/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#da291c">MAN UTD</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-mancity" onclick="selectTheme('theme-mancity')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/prXXgXTD/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#6cabdd">MAN CITY</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-arsenal" onclick="selectTheme('theme-arsenal')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/BH4ZcTfX/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ef0107">ARSENAL</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-chelsea" onclick="selectTheme('theme-chelsea')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/7JV4hftp/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#034694">CHELSEA</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-rmadrid" onclick="selectTheme('theme-rmadrid')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/8gnV3p97/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#FEBE10">R.MADRID</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-barca" onclick="selectTheme('theme-barca')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/RGmYTx6G/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#EDBB00">BARCELONA</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-bayern" onclick="selectTheme('theme-bayern')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1G314xZm/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#DC052D">BAYERN</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-juve" onclick="selectTheme('theme-juve')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1JMvmdsW/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffffff">JUVENTUS</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-psg" onclick="selectTheme('theme-psg')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/27SYjNhH/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#004170">PSG</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-cutegirl" onclick="selectTheme('theme-cutegirl')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/jvG6YGxL/image.png" style="width: 250px; height: 35px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff8fa3">น้องฮาย</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-saitama" onclick="selectTheme('theme-saitama')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/pv9bXrdx/image.png" style="width: 120px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#facc15">SAITAMA</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-nura" onclick="selectTheme('theme-nura')">
+                <span class="theme-icon"><img loading="lazy" src="https://img2.pic.in.th/image6ff1c0981c6d4b4a.md.png" style="width: 155px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#90caf9">นูระ หลานปีศาจ</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-ben10" onclick="selectTheme('theme-ben10')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/F4nSr01n/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00dc82">Ben 10</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-pokemon" onclick="selectTheme('theme-pokemon')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/5W4Z8C98/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcb05; text-shadow: 1px 1px 0px #000;">โปเกม่อน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-bleach" onclick="selectTheme('theme-bleach')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/whWp3SFC/image.png" style="width: 150px; height: 32px; object-fit: contain; vertical-align: middle; filter: hue-rotate(300deg);"></span> <span style="color:#ff0000">Bleach บลีช</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-doraemon" onclick="selectTheme('theme-doraemon')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/DHVg5670/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#0096db">โดเรม่อน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-kitty" onclick="selectTheme('theme-kitty')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/kg0x80Xn/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff1493">คิตตี้</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-demon" onclick="selectTheme('theme-demon')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/MyWhXgwS/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00dc82">ดาบพิฆาตอสูร</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-onepiece" onclick="selectTheme('theme-onepiece')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/HTW8YwSV/image.png" style="width: 90px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffdd00">วันพีซ</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-naruto" onclick="selectTheme('theme-naruto')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/bgn5v2J6/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff7b00">นารูโตะ</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-dbz" onclick="selectTheme('theme-dbz')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/q3jdrGk8/image.png" style="width: 80px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffce00">ดราก้อนบอล</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-aot" onclick="selectTheme('theme-aot')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/G3BZqc2M/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4a373">ผ่าพิภพไททัน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-conan" onclick="selectTheme('theme-conan')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1Y95rmRt/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#cc0000">โคนัน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-toriko" onclick="selectTheme('theme-toriko')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/PZV5wkZG/image.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00a859">โทริโกะ</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-solo" onclick="selectTheme('theme-solo')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/MkdyLX1h/image.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ffff">Solo Leveling</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-jjk" onclick="selectTheme('theme-jjk')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/jZJGm37T/image.png" style="width: 90px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#8a2be2">ผนึกมาร</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-rov" onclick="selectTheme('theme-rov')">
+                <span class="theme-icon"><img loading="lazy" src="https://play-lh.googleusercontent.com/fWAs7pgAaEwNk5gGF0sOsdO-dKUmxm94wEeGbXEF7fsmcnEOTqqkJtqvFEDwk3w_F3wiFDlr9-eX5DtLK1GJCw" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4af37">ตีป้อม ROV</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-ironman" onclick="selectTheme('theme-ironman')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/VcqwYhfT/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcc00">ไอรอนแมน</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-arcade" onclick="selectTheme('theme-arcade')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/0Rx2F5Mm/image.png" style="width: 100px; height: 50px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff3300">8-BIT</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-gta" onclick="selectTheme('theme-gta')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/qLht2BYB/image.png" style="width: 80px; height: 40px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#59b200">GTA</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-mc" onclick="selectTheme('theme-mc')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/SXHQWgyn/image.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#55ff55">Minecraft</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-hacker" onclick="selectTheme('theme-hacker')">
+                <span class="theme-icon"><img loading="lazy" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTUk-raOVomAfink3pUho-_6B3wSYZCpOgJXg&s" style="width: 120px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ff41">Hacker</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-rpg" onclick="selectTheme('theme-rpg')">
+                <span class="theme-icon"><img loading="lazy" src="https://png.pngtree.com/png-vector/20251203/ourmid/pngtree-rpg-game-logo-with-sword-icon-shield-and-gold-accents-for-png-image_18105743.webp" style="width: 50px; height: 50px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4af37">Fantasy</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-cyber" onclick="selectTheme('theme-cyber')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/nNhxk87x/image.png" style="width: 90px; height: 45px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00f3ff">Cyberpunk</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-wealth" onclick="selectTheme('theme-wealth')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/50YBP9Z/image.png" style="width: 140px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffd700">สายเปย์</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-stock" onclick="selectTheme('theme-stock')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/mCbVY5pB/image.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#0ecb81">เทรด</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-gold" onclick="selectTheme('theme-gold')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/V8NYPY9/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#e5c158">ทองคำไฮโซ</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-valo" onclick="selectTheme('theme-valo')">
+                <span class="theme-icon"><img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/1280px-Valorant_logo_-_pink_color_version.svg.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff4655">Valorant</span>
+            </button>
+            <button class="theme-option-btn" id="btn-theme-default" onclick="selectTheme('default')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/Cpccjsp7/image.png" style="width: 110px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ddd">โหมดมืด</span>
+            </button>
+            <button class="theme-option-btn" id="btn-light-mode" onclick="selectTheme('light-mode')">
+                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/84MLvhHF/image.png" style="width: 110px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#fde047">โหมดสว่าง</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="resultModal">
+    <div class="modal-card result-card">
+        <h2 class="result-title">ส รุ ป คื อ อ้ า ย เ จ็ บ พ๊ า ม !!</h2>
+        <p class="result-subtitle">ผลประกอบการความว่างของมึงในรอบนี้</p>
+        <div class="rank-badge" id="resRankBadge" style="display:none;">ระดับ</div>
+        <div class="stats-grid">
+            <div class="stat-box highlight">
+                <div class="stat-label">🔥 ความเร็ว (WPM)</div>
+                <div class="stat-val huge" id="resWpm">0</div>
+            </div>
+            <div class="stat-box highlight" style="background: linear-gradient(145deg, rgba(251,191,36,0.1), rgba(0,0,0,0)); border-color: rgba(251,191,36,0.3);">
+                <div class="stat-label" style="color:#fbbf24;">✨ EXP ที่ได้</div>
+                <div class="stat-val huge" style="color: #fbbf24;" id="resExp">+0</div>
+                <div id="resMult" style="font-size: 12px; color: #fcd34d; opacity: 0.8; margin-top: 2px;"></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">🎯 ความแม่นยำเหยดๆ</div>
+                <div class="stat-val" style="color: #38bdf8;" id="resAcc">0%</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">✔️ พิมพ์ถูกเทพว่ะ</div>
+                <div class="stat-val" style="color: #10b981;" id="resCorrect">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">❌ พิมพ์ผิดกากสัส</div>
+                <div class="stat-val" style="color: #ef4444;" id="resWrong">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">⌨️ พิมพ์คำกากๆไป</div>
+                <div class="stat-val" style="color: #a855f7;" id="resAttempts">0</div>
+            </div>
+        </div>
+        <div id="syncStatus" class="sync-status">⏳ กำลังส่งข้อมูลไปบันทึกนะไอ้สัส...</div>
+        <button class="btn-main" onclick="resetGame()">ก็เล่นใหม่ดิวะ พอใจแล้วหรอแค่นี้</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="rankingModal">
+    <div class="modal-card" style="max-width: 900px; background: #0f172a; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 30px;">
+        <span class="close-modal-x" onclick="closeModal('rankingModal')" style="color: #64748b; top: 15px; right: 20px; font-family: sans-serif;">×</span>
+        <div style="text-align: left; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 15px;">
+            <h2 style="color: #fbbf24; margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; letter-spacing: 0; font-family:'Sarabun';">
+                <img src="https://i.ibb.co/7dztkrMV/image.png" style="height: 45px;"> อันดับความเร็ว
+            </h2>
+            <p style="color: #94a3b8; font-size: 14px; margin: 5px 0 0 0; font-family:'Sarabun';">ตารางจัดอันดับความเร็วสูงสุด (วัดจาก WPM สูงสุด)</p>
+        </div>
+        <div style="max-height: 450px; overflow-y: auto; border: 1px solid #1e293b; background: #0b1120;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; color: #cbd5e1;">
+                <thead style="position: sticky; top: 0; background: #1e293b; color: #f8fafc; font-size: 13px; letter-spacing: 0.5px; z-index: 10;">
+                    <tr>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;"># อันดับ</th>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;">👤 ชื่อ (Name)</th>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;">⚡ WPM สูงสุด</th>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;">🎖️ ระดับความไว</th>
+                    </tr>
+                </thead>
+                <tbody id="lbBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="rankBoardModal">
+    <div class="modal-card" style="max-width: 900px; background: #0f172a; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 30px;">
+        <span class="close-modal-x" onclick="closeModal('rankBoardModal')" style="color: #64748b; top: 15px; right: 20px; font-family: sans-serif;">×</span>
+        <div style="text-align: left; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 15px;">
+            <h2 style="color: #38bdf8; margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; letter-spacing: 0; font-family:'Sarabun';">
+                <img src="https://img2.pic.in.th/imagec45e19e0556aa82c.png" style="height: 45px;"> ท ำ เ นี ย บ ย ศ
+            </h2>
+            <p style="color: #94a3b8; font-size: 14px; margin: 5px 0 0 0; font-family:'Sarabun';">จัดอันดับตามความว่าง </p>
+        </div>
+        <div style="max-height: 450px; overflow-y: auto; border: 1px solid #1e293b; background: #0b1120;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; color: #cbd5e1;">
+                <thead style="position: sticky; top: 0; background: #1e293b; color: #f8fafc; font-size: 13px; letter-spacing: 0.5px; z-index: 10;">
+                    <tr>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;"># อันดับ</th>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;"> ชื่อ (Name)</th>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;"> ยศปัจจุบัน</th>
+                        <th style="padding: 15px; border-bottom: 2px solid #334155;"> EXP รวม</th>
+                    </tr>
+                </thead>
+                <tbody id="rankBoardBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="historyModal">
+    <div class="modal-card" style="max-width: 800px; background: #EAF4F4; border: 1px solid #334155;">
+        <span class="close-modal-x" onclick="closeModal('historyModal')" style="font-family: sans-serif;">×</span>
+        <h2 style="color: #000000; font-family:'Sarabun';">📜 ป ร ะ วั ติ ก า ร พิ ม พ์ ก า ก ๆ</h2>
+        <div style="max-height: 400px; overflow-y: auto;">
+            <table class="rank-table" style="width:100%; text-align:left;">
+                <thead style="background:#333; color:#fff;">
+                    <tr><th style="padding:10px;">#</th><th style="padding:10px;">WPM ที่ทำได้</th><th style="padding:10px;">เวลาที่พิมพ์</th></tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="darkActionModal" style="z-index: 10005;">
+    <div class="modal-card dark-modal">
+        <h2 id="darkTitle">หัวข้อ</h2>
+        <p id="darkDesc">รายละเอียด</p>
+        <input type="text" id="darkInput1" class="dark-input" style="display:none;" maxlength="30">
+        <input type="password" id="darkInput2" class="dark-input" style="display:none;">
+        
+        <input type="number" id="darkInput3" class="dark-input" style="display:none;" placeholder="ตัวคูณ EXP (ค่าเริ่มต้น 10)">
+        <div id="timeInputsBox" style="display:none; gap: 10px; margin-bottom: 15px;">
+            <input type="number" id="darkInputDays" class="dark-input" placeholder="จำนวนวัน..." style="margin-bottom:0;" min="0">
+            <input type="number" id="darkInputHours" class="dark-input" placeholder="จำนวนชั่วโมง..." style="margin-bottom:0;" min="0" max="23">
+        </div>
+
+        <div class="dark-btn-group">
+            <button class="dark-btn cancel" id="darkCancelBtn" onclick="closeModal('darkActionModal')">ช่างแม่ง</button>
+            <button class="dark-btn confirm" id="darkConfirmBtn">จัดไป</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="logoutModal" style="display: none; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);">
+    <div class="modal-card" style="background: #1a1a1a; width: 95%; max-width: 420px; padding: 45px; border-radius: 35px; text-align: center; border: 2px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <span class="close-modal-x" onclick="closeModal('logoutModal')" style="font-family: sans-serif;">×</span>
+        <h2 style="color: #ff4d4d; margin-bottom: 15px; font-size: 1.8rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,77,77,0.3); font-family:'Sarabun';">มึ ง จ ะ อ อ ก จ ริ ง ๆ ห ร อ ?</h2>
+        <p style="margin-bottom: 30px; color: #ffffff; font-size: 1.1rem; opacity: 0.9; font-family:'Sarabun';">แล้วจะจำรหัสได้ไหม? คิดดีๆ นะไอ้กาก!</p>
+        <div style="display: flex; gap: 15px;">
+            <button class="btn-main" style="background: #ef4444; color: white; border: none; padding: 12px 20px; border-radius: 15px; flex: 1;" onclick="confirmLogout()">เออ ออกเลย!</button>
+            <button class="btn-main" style="background: #444; color: white; border: none; padding: 12px 20px; border-radius: 15px; flex: 1;" onclick="closeModal('logoutModal')">ไม่เอา ล้อเล่น</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="imageViewerModal" style="z-index: 10005;" onclick="closeModal('imageViewerModal')">
+    <div class="modal-card" style="background: transparent; border: none; box-shadow: none; padding: 0; max-width: 400px; text-align: center;">
+        <img id="largeProfilePic" src="" style="width: 100%; max-width: 400px; height: auto; border-radius: 50%; border: 4px solid var(--primary); box-shadow: 0 0 30px rgba(0,0,0,0.8); object-fit: cover; aspect-ratio: 1/1;">
+        <p style="color: white; margin-top: 15px; font-weight: bold; text-shadow: 0 2px 5px #000; font-family: 'Sarabun';">คลิกที่ใดก็ได้เพื่อปิด</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="promotionModal" style="z-index: 10001;">
+    <div class="modal-card" style="max-width: 450px; background: linear-gradient(145deg, #1a1a1a, #000); border: 3px solid #fbbf24; box-shadow: 0 0 50px rgba(251, 191, 36, 0.4); padding: 40px; text-align: center;">
+        <div style="font-size: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 15px #fbbf24);" id="promoIcon">🎖️</div>
+        <h2 style="color: #fbbf24; font-size: 30px; margin-bottom: 10px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); font-family: 'Sarabun';">ยิ น ดี ด้ ว ย ไ อ้ ส อ ง !</h2>
+        <h3 style="color: #fff; font-size: 24px; margin-bottom: 20px; font-family: 'Sarabun';">มึงได้เลื่อนยศเป็น</h3>
+        <div id="newRankName" style="font-size: 28px; font-weight: 800; color: #fbbf24; background: rgba(251,191,36,0.1); padding: 15px; border-radius: 15px; border: 1px dashed #fbbf24; margin-bottom: 30px; font-family: 'Sarabun';">
+            สิบตรี
+        </div>
+        <button class="btn-main" onclick="closePromotion()" style="background: #fbbf24; color: #000; box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4);">รับทราบครับจ่า!</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="avatarModal" style="z-index: 10006;">
+    <div class="modal-card avatar-card">
+        <span class="close-modal-x" onclick="closeModal('avatarModal')" style="font-family: sans-serif;">×</span>
+        <h2 class="avatar-title">เปลี่ยนรูปโปรไฟล์</h2>
+        <div class="avatar-preview"><img id="avatarPreview" alt=""></div>
+        <div id="avatarStatus" class="avatar-status"></div>
+        <div class="avatar-actions">
+            <button class="avatar-btn ghost" id="avatarPickBtn" onclick="pickAvatar()">เลือกรูปอื่น</button>
+            <button class="avatar-btn primary" id="avatarSaveBtn" onclick="saveAvatar()">ใช้รูปนี้</button>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="profilePicInput" accept="image/*" style="display: none;">
+
+<script src="stats.js?v=106"></script>
+<script src="game.js?v=106"></script>
+<script src="leaderboard.js?v=106"></script>
+<script src="avatar-tools.js?v=106"></script>
+<script src="auth.js?v=106"></script>
+
+<script>
+    // 🔗 1. เอาสมองกลลิงก์ Sheet คืนมา! (แก้คนออนไลน์ & ธีมหาย)
+    window.SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyn-42qkA8MP5LD5kD8_9Wl6SHjbhlByRRI0Tt0R40FKPRSZgNnRxwFaOjAUJ0RwmvI/exec";
+
+    // 🛡️ 2. ด่านตรวจคนเข้าเมือง (auth.js อาจเขียนทับ เลยเซ็ตซ้ำอีกรอบ)
+    window.currentUser = localStorage.getItem('currentUser') || localStorage.getItem('isLoggedIn');
+
+    // 🔧 3. สร้างบัตรคิวกันเด้งออก (แก้ระบบ Ping มองว่าเป็นแฮกเกอร์)
+    if (!localStorage.getItem('myDeviceId')) {
+        localStorage.setItem('myDeviceId', 'DEV-' + Math.floor(Math.random() * 1000000000));
+    }
+    window.lastLoginTime = Date.now();
+
+    window.forceUpdateExpBar = function(exp) {
+        if (typeof window.getRankInfo !== 'function') return;
+        let rankInfo = window.getRankInfo(exp);
+        if (!rankInfo || !rankInfo.current) return;
+        
+        let expNumEl = document.getElementById('expNumbersDisplay');
+        let expFillEl = document.getElementById('expBarFill');
+        
+        if (rankInfo.next) {
+            let currentRankExp = rankInfo.current.exp; 
+            let nextRankExp = rankInfo.next.exp; 
+            let expInThisRank = exp - currentRankExp; 
+            let expNeeded = nextRankExp - currentRankExp; 
+            
+            if(expNumEl) expNumEl.innerText = `${Number(exp).toLocaleString()} / ${Number(nextRankExp).toLocaleString()} EXP`;
+            
+            if(expFillEl) {
+                let pct = Math.min((expInThisRank / expNeeded) * 100, 100);
+                expFillEl.style.width = pct + '%';
+            }
+        } else {
+            if(expNumEl) expNumEl.innerText = `MAX LEVEL (${Number(exp).toLocaleString()} EXP)`;
+            if(expFillEl) expFillEl.style.width = '100%';
+        }
+        
+        // อัปเดตชื่อยศ
+        let rankText = document.getElementById('rankTextDisplay');
+        if(rankText) rankText.innerText = rankInfo.current.name;
+        
+        let nextRankText = document.getElementById('nextRankTextDisplay');
+        if(nextRankText && rankInfo.next) nextRankText.innerText = rankInfo.next.name;
+        else if (nextRankText) nextRankText.innerText = "ตันแล้ว";
+
+        // อัปเดตรูปยศ
+        if(window.rankIconUrls) {
+            let curIcon = window.rankIconUrls[rankInfo.current.name];
+            let nxtIcon = window.rankIconUrls[rankInfo.next ? rankInfo.next.name : ''];
+            let rankSm = document.getElementById('rankIconSmallDisplay');
+            if(curIcon && rankSm) rankSm.innerHTML = `<img src="${curIcon}" style="height:24px; vertical-align:middle;">`;
+            let nextSm = document.getElementById('nextRankIconDisplay');
+            if(nxtIcon && nextSm) nextSm.innerHTML = `<img src="${nxtIcon}" style="height:20px; border-radius:3px;">`;
+        }
+    };
+
+    // ⚡ 4. โชว์ข้อมูลจากแคชแล้วเริ่มเกมทันที ไม่ต้องรอโหลด Firebase เสร็จ
+    if (window.currentUser) {
+        document.getElementById('gameMain').style.display = 'block';
+        document.getElementById('displayUser').innerText = localStorage.getItem('cachedName') || window.currentUser;
+
+        if (localStorage.getItem('cacheOwner') === window.currentUser) {
+            if (localStorage.getItem('cachedWPM')) document.getElementById('bestWPM').innerText = localStorage.getItem('cachedWPM');
+            if (localStorage.getItem('cachedPic')) document.getElementById('userProfilePic').src = localStorage.getItem('cachedPic');
+            if (localStorage.getItem('cachedExp')) window.forceUpdateExpBar(Number(localStorage.getItem('cachedExp')));
+        }
+
+        if (typeof window.resetGame === 'function') window.resetGame();
+    }
+</script>
+
+<script type="module" async>
+    // 🔌 5. เชื่อมต่อ Firebase (async = ไม่บล็อกหน้าเว็บ ระหว่างโหลดก็พิมพ์ได้เลย)
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const fbConfig = {
+        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw",
+        authDomain: "pimthai-e16c3.firebaseapp.com",
+        projectId: "pimthai-e16c3",
+        storageBucket: "pimthai-e16c3.firebasestorage.app",
+        messagingSenderId: "955936818307",
+        appId: "1:955936818307:web:273fa00d07f36894d207b6"
+    };
+    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    window.db = getFirestore(app);
+
+    // ฟังข้อมูลตัวเองแบบสด: แอดมินแก้ตัวคูณ/EXP/ชื่อ/รูป → หน้าเกมเปลี่ยนตามทันที ไม่ต้องรีเฟรช
+    function bootGame() {
+        if (!window.currentUser) return;
+        let first = true;
+
+        onSnapshot(doc(window.db, "users", window.currentUser), snap => {
+            if (!snap.exists()) {
+                // บัญชีถูกลบหรือแอดมินเปลี่ยนไอดี → ให้ล็อกอินใหม่ (เช็กกับเซิร์ฟเวอร์จริงก่อน ไม่ใช่แค่แคชในเครื่อง)
+                if (!snap.metadata.fromCache && typeof window.handleLogout === 'function') window.handleLogout(true);
+                return;
+            }
+            const data = snap.data();
+            const realExp = Number(data.exp) || 0;
+            const realWpm = Number(data.wpm) || 0;
+            const name = data.displayName || window.currentUser;
+
+            document.getElementById('displayUser').innerText = name;
+            document.getElementById('bestWPM').innerText = realWpm;
+            if (data.profilePic) document.getElementById('userProfilePic').src = data.profilePic;
+            window.forceUpdateExpBar(realExp);
+
+            let dbCache = JSON.parse(localStorage.getItem('typingDB_Final') || '{}');
+            if (!dbCache[window.currentUser]) dbCache[window.currentUser] = { best: 0, exp: 0, history: [] };
+            dbCache[window.currentUser].exp = realExp;
+            dbCache[window.currentUser].best = realWpm;
+            dbCache[window.currentUser].multiplier = window.parseMultiplier(data.multiplier); // ตัวคูณที่แอดมินตั้ง (0 ก็ต้องเป็น 0)
+            dbCache[window.currentUser].profilePic = data.profilePic || '';
+            try {
+                localStorage.setItem('typingDB_Final', JSON.stringify(dbCache));
+                localStorage.setItem('cacheOwner', window.currentUser);
+                localStorage.setItem('cachedName', name);
+                localStorage.setItem('cachedWPM', realWpm);
+                localStorage.setItem('cachedExp', realExp);
+                localStorage.setItem('cachedPic', data.profilePic || '');
+            } catch (e) { console.warn("พื้นที่ในเครื่องเต็ม:", e); }
+            // แคชเก่าอาจทำให้ยศตั้งต้นผิด → เด้งป๊อปอัปเลื่อนยศมั่ว
+            if (typeof window.refreshRankBaseline === 'function') window.refreshRankBaseline();
+
+            if (first) {
+                first = false;
+                // ☁️ รวมประวัติการพิมพ์กับบน Firebase (ไม่ต้องรอ ให้ทำเบื้องหลัง)
+                if (typeof window.syncHistory === 'function') window.syncHistory(data.history).catch(e => console.error("ซิงก์ประวัติไม่สำเร็จ:", e));
+                if (typeof window.loadTickerData === 'function') window.loadTickerData();
+            }
+        }, err => {
+            console.error("Firebase Error:", err);
+            if (first && typeof window.loadTickerData === 'function') { first = false; window.loadTickerData(); }
+        });
+    }
+
+    bootGame();
+</script>
+
+<script>
+    window.showLogoutConfirm = function() {
+        document.getElementById('logoutModal').style.display = 'flex';
+    };
+
+    window.confirmLogout = function() {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('isLoggedIn'); 
+        localStorage.removeItem('cacheOwner');
+        localStorage.removeItem('cachedName');
+        localStorage.removeItem('cachedWPM'); 
+        localStorage.removeItem('cachedExp'); 
+        localStorage.removeItem('cachedPic'); 
+        window.location.replace("login.html"); 
+    };
+</script>
+</body>
+</html>
