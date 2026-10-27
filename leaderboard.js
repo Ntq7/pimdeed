@@ -6,15 +6,7 @@ window.getFirebaseDB = async function() {
     if (window.db) return window.db;
     const { initializeApp, getApps, getApp } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js");
     const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-    const fbConfig = { 
-        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw", 
-        authDomain: "pimthai-e16c3.firebaseapp.com", 
-        projectId: "pimthai-e16c3", 
-        storageBucket: "pimthai-e16c3.firebasestorage.app", 
-        messagingSenderId: "955936818307", 
-        appId: "1:955936818307:web:273fa00d07f36894d207b6" 
-    };
-    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    const app = !getApps().length ? initializeApp(window.FIREBASE_CONFIG) : getApp();
     window.db = getFirestore(app);
     return window.db;
 };
@@ -22,6 +14,12 @@ window.getFirebaseDB = async function() {
 // ชื่อที่โชว์ = ชื่อที่ผู้เล่นตั้งเอง (ไม่มีก็ใช้ไอดี) และต้อง escape เพราะชื่อพิมพ์อะไรก็ได้ กันคนยัด HTML/สคริปต์
 window.escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const shownName = u => window.escapeHtml(u.displayName || u.username);
+
+// 🆙 รูปโปรไฟล์ + ป้ายเลเวลที่มุมขวาล่าง (ใช้ในบอร์ดเลื่อนและตารางอันดับ)
+function avatarWithLevel(pic, fallback, size, u, imgStyle = '') {
+    const level = window.Levels ? window.Levels.info(u.lvXp).level : 1;
+    return `<span class="av-lv" style="width:${size}px; height:${size}px;"><img src="${pic}" onerror="this.onerror=null; this.src='${fallback}';" onclick="window.openImageViewer('${pic}')" style="${imgStyle}"><b>${level}</b></span>`;
+}
 
 // 🔥 สร้างตัวแปรเก็บฟังก์ชันหยุดการดึงข้อมูล (เพื่อประหยัดโควต้า Firebase เวลากดปิดหน้าต่าง)
 let unsubTicker = null;
@@ -40,7 +38,8 @@ window.loadTickerData = async function() {
     if (window.currentUser && window.db) {
         import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js").then(({ doc, setDoc }) => {
             const uRef = doc(window.db, "users", window.currentUser);
-            setDoc(uRef, { last_online: Date.now(), username: window.currentUser }, { merge: true }).catch(()=>{});
+            // ส่งธีมที่ใช้อยู่ไปด้วย → หน้าเลือกธีมนับได้ว่าคนออนไลน์ใช้ธีมไหนกี่คน
+            setDoc(uRef, { last_online: Date.now(), username: window.currentUser, theme: localStorage.getItem('theme_preference') || 'default' }, { merge: true }).catch(()=>{});
         });
     }
 
@@ -57,9 +56,14 @@ window.loadTickerData = async function() {
                     let activeSessions = data.active_sessions || (data[0] && data[0].active_sessions ? data[0].active_sessions : {});
                     let myDeviceId = localStorage.getItem('myDeviceId');
                     
-                    if (activeSessions && activeSessions[window.currentUser] && activeSessions[window.currentUser].deviceId !== myDeviceId) {
+                    // แอดมินเปิดหลายเครื่อง/หลายเบราว์เซอร์พร้อมกันได้ (เช่น เล่นในเครื่องนี้ + คุมหลังบ้านอีกที่) ไม่โดนเตะ
+                    const isAdmin = (window.ADMIN_IDS || []).includes(window.currentUser) || window.currentUserRole === 'admin';
+                    if (!isAdmin && activeSessions && activeSessions[window.currentUser] && activeSessions[window.currentUser].deviceId !== myDeviceId) {
                         let timeSinceLogin = window.lastLoginTime ? (Date.now() - window.lastLoginTime) : 99999;
-                        if (timeSinceLogin > 15000) { alert("🚨มีคนล็อกอินไอดีมึงจากเครื่องอื่น!"); if(typeof window.handleLogout === 'function') window.handleLogout(true); } 
+                        if (timeSinceLogin > 15000) {
+                            try { localStorage.setItem('logoutReason', 'ไอดีนี้ถูกล็อกอินจากเครื่องหรือเบราว์เซอร์อื่น ระบบเลยให้เครื่องนี้ออกก่อน (ใช้ได้ทีละเครื่อง)'); } catch (e) {}
+                            if(typeof window.handleLogout === 'function') window.handleLogout(true);
+                        }
                         else { fetch(window.SCRIPT_URL + "?user=" + encodeURIComponent(window.currentUser) + "&deviceId=" + encodeURIComponent(myDeviceId) + "&action=login&_t=" + Date.now()); }
                     }
                 }
@@ -108,7 +112,7 @@ window.loadTickerData = async function() {
                     }
 
                     tickerHtml += `<span style="display: inline-flex; align-items: center; background: linear-gradient(90deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.8) 100%); padding: 6px 16px; border-radius: 30px; border: 1px solid #334155; margin-right: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                        <img src="${userProfilePic}" onerror="this.onerror=null; this.src='${defaultSVG}';" onclick="window.openImageViewer('${userProfilePic}')" style="cursor:pointer; height: 32px; width: 32px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary); object-fit: cover;">
+                        <span style="margin-right: 12px; display: inline-flex;">${avatarWithLevel(userProfilePic, defaultSVG, 32, item, 'border: 2px solid var(--primary);')}</span>
                         <span style="color: #f8fafc; font-weight: bold; margin-right: 10px; font-size: 15px; letter-spacing: 0.5px;">${shownName(item)}</span>
                         <span style="color: #64748b; font-size: 13px; margin-right: 10px;">ซัดไป</span>
                         <span style="color: #38bdf8; font-weight: 900; font-size: 18px; text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);">${displayWpm}</span> <span style="color: #38bdf8; font-size: 12px; margin-right: 12px; margin-left: 3px;">WPM</span>
@@ -141,6 +145,12 @@ window.loadTickerData = async function() {
             unsubOnline = onSnapshot(qOnline, (snapshot) => {
                 let badge = document.getElementById('onlineCount');
                 if (badge) badge.innerText = snapshot.size || 1;
+                // 👥 นับคนออนไลน์แยกตามธีม (โชว์บนปุ่มในหน้าเลือกธีม)
+                const counts = {};
+                snapshot.forEach(d => { const t = d.data().theme || 'default'; counts[t] = (counts[t] || 0) + 1; });
+                window.themeOnlineCounts = counts;
+                window.themeOnlineIds = new Map(snapshot.docs.map(d => [d.id, d.data().theme || 'default']));
+                if (typeof window.renderThemeCounts === 'function') window.renderThemeCounts();
             }, (err) => { console.error("ตัวนับออนไลน์หลุด:", err); unsubOnline = null; });
         } catch(err2) { if (err2 !== "skip") console.error("เกิดข้อผิดพลาดตอนนับคนออนไลน์:", err2); }
 
@@ -194,7 +204,7 @@ window.showRanking = async function() {
                 html += `<tr style="border-bottom: 1px solid #333; background: ${bgStyle}; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='${bgStyle}'">
                     <td style="padding: 12px 15px; font-weight: bold; color: ${rankColor}; font-size: 16px; text-align: center;">${rankTrophy}</td>
                     <td style="padding: 12px 15px; font-weight: bold; color: #fff; font-size: 15px; display: flex; align-items: center; gap: 10px;">
-                        <img src="${userProfilePic}" onerror="this.onerror=null; this.src='${defaultSVG}';" onclick="window.openImageViewer('${userProfilePic}')" style="cursor:pointer; width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"> ${shownName(row)}
+                        ${avatarWithLevel(userProfilePic, defaultSVG, 30, row)} ${shownName(row)}
                     </td>
                     <td style="padding: 12px 15px; font-weight: bold; color: var(--primary); font-size: 17px;">${row.wpm}</td>
                     <td style="padding: 12px 15px; display: flex; align-items: center; gap: 8px;">
@@ -255,7 +265,7 @@ window.showRankBoard = async function() {
                 html += `<tr style="border-bottom: 1px solid #333; background: ${bgStyle}; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='${bgStyle}'">
                     <td style="padding: 12px 15px; font-weight: bold; color: ${rankColor}; font-size: 16px; text-align: center;">${rankTrophy}</td>
                     <td style="padding: 12px 15px; font-weight: bold; color: #fff; font-size: 15px; display: flex; align-items: center; gap: 10px;">
-                        <img src="${userProfilePic}" onerror="this.onerror=null; this.src='${defaultSVG}';" onclick="window.openImageViewer('${userProfilePic}')" style="cursor:pointer; width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"> ${shownName(row)}
+                        ${avatarWithLevel(userProfilePic, defaultSVG, 30, row)} ${shownName(row)}
                     </td>
                     <td style="padding: 12px 15px; font-weight: bold; color: #fbbf24; font-size: 14px;">
                         <img src="${iconUrl}" width="30" height="30" style="vertical-align: middle; border-radius: 4px; margin-right: 8px;"> 

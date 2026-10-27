@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Chakra+Petch:wght@400;700&family=Press+Start+2P&family=VT323&family=Teko:wght@500;600;700&family=Mali:wght@500;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=106">
+    <link rel="stylesheet" href="style.css?v=118">
 </head>
 <body>
 <script>
@@ -46,6 +46,8 @@
                 <span class="online-dot"></span> ออนไลน์ <span id="onlineCount">1</span> คน
             </div>
 
+            <button class="btn-top lo-bell bag-btn" type="button" onclick="Levels.openBag()" title="กระเป๋า" aria-label="กระเป๋า">🎒<span class="lo-badge" id="bagBadge" hidden></span></button>
+
             <div class="menu-container">
                 <button class="hamburger-btn" onclick="toggleActionMenu(event)" aria-label="เมนู"><span></span><span></span><span></span></button>
                 <div class="dropdown-menu" id="actionMenu">
@@ -57,6 +59,12 @@
                     </button>
                     <button class="dropdown-item" onclick="closeActionMenu(); showChangePassword();">
                         <span class="dd-icon">🔑</span><span class="dd-text">เปลี่ยนรหัสผ่าน</span>
+                    </button>
+                    <button class="dropdown-item" onclick="closeActionMenu(); Levels.openBag('bag');">
+                        <span class="dd-icon">🎒</span><span class="dd-text">กระเป๋าบัตร<small>ใช้บัตร x2 ที่มี</small></span><span class="dd-badge" id="bagDot" hidden></span>
+                    </button>
+                    <button class="dropdown-item" onclick="closeActionMenu(); Levels.openBag('shop');">
+                        <span class="dd-icon">🛒</span><span class="dd-text">ร้านค้า<small>เอาเหรียญ 🪙 แลกบัตร x2</small></span>
                     </button>
                     <button class="dropdown-item" onclick="closeActionMenu(); showHistory();">
                         <span class="dd-icon">📜</span><span class="dd-text">ประวัติการพิมพ์กากๆ<small>50 ตาล่าสุด ดูได้ทุกเครื่อง</small></span>
@@ -98,6 +106,14 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 🆙 เลเวล (แยกจากยศ) + บัตร x2 ที่เปิดอยู่ -->
+                <div class="lv-row" onclick="Levels.openBag()" title="ดูเลเวลและกระเป๋า">
+                    <span class="lv-badge" id="lvBadge">Lv.1</span>
+                    <div class="lv-bar mini"><div class="lv-fill" id="lvFill"></div></div>
+                    <span class="coin-chip" id="coinBalance" title="เหรียญ (เอาไปซื้อบัตรในร้านค้า)">🪙 0</span>
+                    <span class="boost-chips" id="boostChips" hidden></span>
+                </div>
             </div>
         </div>
         <div style="text-align: right; min-width: 150px;">
@@ -106,15 +122,13 @@
         </div>
     </div>
 
-    <h2 style="font-size: 16px; color: #f1f5f9; text-shadow: 0 0 5px #818cf8, 0 0 10px #818cf8, 0 0 20px #818cf8; margin-bottom: 15px; text-align: center; letter-spacing: 1.5px; word-spacing: 2px; line-height: 1.6;">ระบบอัปเดตแล้ว ใส่รูปโปรไฟล์ใหม่นะครับ (กดที่ 3 ขีดข้างบนได้เลย)</h2>
-
     <div class="typing-card">
         <div class="display-window">
             <div id="wordContainer"></div>
         </div>
         
         <div class="controls-row">
-            <input type="text" id="userInput" placeholder=" ฝึกพิมพ์ด่าลูกค้านะ ไอ้เวร" autocomplete="off">
+            <input type="text" id="userInput" placeholder=" ฝึกพิมพ์ด่าลูกค้านะ ไอ้เวร" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
             <div class="timer-badge" id="timer">60</div>
             <button class="btn-refresh" onclick="resetGame()">🔄</button>
         </div>
@@ -280,39 +294,41 @@
 </div>
 
 <div class="modal-overlay" id="resultModal">
-    <div class="modal-card result-card">
-        <h2 class="result-title">ส รุ ป คื อ อ้ า ย เ จ็ บ พ๊ า ม !!</h2>
-        <p class="result-subtitle">ผลประกอบการความว่างของมึงในรอบนี้</p>
-        <div class="rank-badge" id="resRankBadge" style="display:none;">ระดับ</div>
-        <div class="stats-grid">
-            <div class="stat-box highlight">
-                <div class="stat-label">🔥 ความเร็ว (WPM)</div>
-                <div class="stat-val huge" id="resWpm">0</div>
-            </div>
-            <div class="stat-box highlight" style="background: linear-gradient(145deg, rgba(251,191,36,0.1), rgba(0,0,0,0)); border-color: rgba(251,191,36,0.3);">
-                <div class="stat-label" style="color:#fbbf24;">✨ EXP ที่ได้</div>
-                <div class="stat-val huge" style="color: #fbbf24;" id="resExp">+0</div>
-                <div id="resMult" style="font-size: 12px; color: #fcd34d; opacity: 0.8; margin-top: 2px;"></div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">🎯 ความแม่นยำเหยดๆ</div>
-                <div class="stat-val" style="color: #38bdf8;" id="resAcc">0%</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">✔️ พิมพ์ถูกเทพว่ะ</div>
-                <div class="stat-val" style="color: #10b981;" id="resCorrect">0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">❌ พิมพ์ผิดกากสัส</div>
-                <div class="stat-val" style="color: #ef4444;" id="resWrong">0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">⌨️ พิมพ์คำกากๆไป</div>
-                <div class="stat-val" style="color: #a855f7;" id="resAttempts">0</div>
+    <!-- 🏁 หน้าสรุปผล (โล่งๆ + คำด่าเกรียนๆ) เนื้อหาเติมจาก game.js → showResult() -->
+    <div class="modal-card result-card rs-card">
+        <h2 class="rs-title">ส รุ ป คื อ อ้ า ย เ จ็ บ พ๊ า ม !!</h2>
+        <p class="rs-roast" id="rsRoast">ผลประกอบการความว่างของมึงในรอบนี้</p>
+
+        <div class="rs-main">
+            <div class="rs-big"><span id="resWpm">0</span><small>WPM</small></div>
+            <div class="rs-side">
+                <div><span>🎯 แม่นยำเหยดๆ</span><b id="resAcc">0%</b></div>
+                <div><span>✔️ พิมพ์ถูกเทพว่ะ</span><b id="resCorrect" class="ok">0</b></div>
+                <div><span>❌ พิมพ์ผิดกากสัส</span><b id="resWrong" class="bad">0</b></div>
+                <div><span>⌨️ พิมพ์คำกากๆไป</span><b id="resAttempts">0</b></div>
             </div>
         </div>
-        <div id="syncStatus" class="sync-status">⏳ กำลังส่งข้อมูลไปบันทึกนะไอ้สัส...</div>
-        <button class="btn-main" onclick="resetGame()">ก็เล่นใหม่ดิวะ พอใจแล้วหรอแค่นี้</button>
+
+        <div class="rs-gains2">
+            <div class="rs-exp">
+                <span>✨ EXP ที่ได้</span><b id="resExp">+0</b>
+                <small id="resMult"></small>
+            </div>
+            <div class="rs-coin">
+                <span>🪙 เหรียญ</span><b id="resCoins">+0</b>
+                <small id="resCoinsX2" hidden>บัตรเหรียญ x2</small>
+            </div>
+        </div>
+
+        <div class="rs-news" id="rsNews"></div>
+
+        <div class="rs-lv"><span class="lv-badge" id="rsLvBadge">Lv.1</span><div class="lv-bar mini"><div class="lv-fill" id="rsLvFill"></div></div></div>
+
+        <div id="syncStatus" class="sync-status">⏳ กำลังบันทึก...</div>
+        <div class="rs-actions">
+            <button class="btn-main rs-again" onclick="resetGame()">ก็เล่นใหม่ดิวะ พอใจแล้วหรอแค่นี้</button>
+            <button class="rs-bag-btn" onclick="Levels.openBag()" title="กระเป๋า" aria-label="กระเป๋า">🎒<span class="lo-badge" id="rsBagBadge" hidden></span></button>
+        </div>
     </div>
 </div>
 
@@ -447,11 +463,14 @@
 
 <input type="file" id="profilePicInput" accept="image/*" style="display: none;">
 
-<script src="stats.js?v=106"></script>
-<script src="game.js?v=106"></script>
-<script src="leaderboard.js?v=106"></script>
-<script src="avatar-tools.js?v=106"></script>
-<script src="auth.js?v=106"></script>
+<script src="firebase-config.js?v=118"></script>
+<script src="stats.js?v=113"></script>
+<script src="game.js?v=118"></script>
+<script src="leaderboard.js?v=118"></script>
+<script src="liveops.js?v=111"></script>
+<script src="avatar-tools.js?v=109"></script>
+<script src="levels.js?v=118"></script>
+<script src="auth.js?v=118"></script>
 
 <script>
     // 🔗 1. เอาสมองกลลิงก์ Sheet คืนมา! (แก้คนออนไลน์ & ธีมหาย)
@@ -530,15 +549,7 @@
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-    const fbConfig = {
-        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw",
-        authDomain: "pimthai-e16c3.firebaseapp.com",
-        projectId: "pimthai-e16c3",
-        storageBucket: "pimthai-e16c3.firebasestorage.app",
-        messagingSenderId: "955936818307",
-        appId: "1:955936818307:web:273fa00d07f36894d207b6"
-    };
-    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    const app = !getApps().length ? initializeApp(window.FIREBASE_CONFIG) : getApp();
     window.db = getFirestore(app);
 
     // ฟังข้อมูลตัวเองแบบสด: แอดมินแก้ตัวคูณ/EXP/ชื่อ/รูป → หน้าเกมเปลี่ยนตามทันที ไม่ต้องรีเฟรช
@@ -549,10 +560,16 @@
         onSnapshot(doc(window.db, "users", window.currentUser), snap => {
             if (!snap.exists()) {
                 // บัญชีถูกลบหรือแอดมินเปลี่ยนไอดี → ให้ล็อกอินใหม่ (เช็กกับเซิร์ฟเวอร์จริงก่อน ไม่ใช่แค่แคชในเครื่อง)
-                if (!snap.metadata.fromCache && typeof window.handleLogout === 'function') window.handleLogout(true);
+                if (!snap.metadata.fromCache && typeof window.handleLogout === 'function') {
+                    try { localStorage.setItem('logoutReason', `ไม่พบไอดี "${window.currentUser}" ในระบบแล้ว (แอดมินอาจเปลี่ยนไอดีหรือลบบัญชี) ล็อกอินใหม่ด้วยไอดีล่าสุด หรือติดต่อแอดมิน`); } catch (e) {}
+                    window.handleLogout(true);
+                }
                 return;
             }
             const data = snap.data();
+            window.currentUserRole = data.role || ''; // แอดมินไม่โดนกฎ "ใช้ได้ทีละเครื่อง"
+            window.serverProgress = { rankIdx: data.rankIdx, level: data.level }; // game.js ใช้ตอนบันทึกจบตา
+            if (window.Levels) window.Levels.setState(data); // เลเวล / บัตร / รางวัลที่รอเลือก
             const realExp = Number(data.exp) || 0;
             const realWpm = Number(data.wpm) || 0;
             const name = data.displayName || window.currentUser;

@@ -47,7 +47,7 @@
         .lock-card { width: 100%; max-width: 360px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 32px 28px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
         .lock-card h1 { margin: 10px 0 4px; font-size: 22px; }
         .lock-card p { margin: 0 0 20px; color: var(--muted); }
-        .lock-card .input { text-align: center; font-size: 18px; letter-spacing: 6px; margin-bottom: 12px; }
+        .lock-card .lock-field { font-size: 15px; margin-bottom: 10px; min-height: 46px; }
         .lock-err { color: #f87171; min-height: 20px; margin-top: 10px; font-size: 13px; }
 
         /* โครงหลัก */
@@ -161,6 +161,35 @@
         .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 600; cursor: pointer; }
+        .check-row input { width: 18px; height: 18px; accent-color: var(--primary); }
+        .admin-mark { margin-left: 4px; font-size: 12px; }
+
+        /* ศูนย์ควบคุมเซิร์ฟ */
+        .liveops { background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(167,139,250,0.08)); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 16px; margin-bottom: 18px; }
+        .liveops-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .liveops h2 { margin: 0 0 2px; font-size: 18px; }
+        .event-list { display: flex; flex-direction: column; gap: 8px; }
+        .event { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+        .event.live { border-color: rgba(251,191,36,0.6); box-shadow: 0 0 0 3px rgba(251,191,36,0.12); }
+        .event-icon { width: 40px; height: 40px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 20px; background: var(--panel-2); }
+        .event-body { flex: 1; min-width: 0; }
+        .event-title { font-weight: 800; }
+        .event-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; margin-left: 6px; vertical-align: 1px; }
+        .badge.live { background: rgba(251,191,36,0.18); color: var(--accent); }
+        .badge.soon { background: rgba(56,189,248,0.15); color: var(--primary); }
+        .countdown { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--text); }
+
+        /* ฟอร์มสร้างอีเวนต์ */
+        .form-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+        .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+        .seg button { min-height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--bg); font-weight: 700; font-size: 13px; }
+        .seg button.on { border-color: var(--primary); background: rgba(56,189,248,0.14); color: var(--primary); }
+        .preview-toast { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: #0f172a; border: 1px solid var(--line-2); font-size: 13px; }
+        .preview-toast b { display: block; font-size: 14px; }
+        .dialog-card.wide { max-width: 480px; }
+
         @media (max-width: 640px) {
             .wrap { padding: 16px 12px 40px; }
             .topbar h1 { font-size: 20px; }
@@ -176,9 +205,10 @@
     <form class="lock-card" onsubmit="unlock(event)">
         <div style="font-size: 40px;">🛠️</div>
         <h1>แผงควบคุมแอดมิน</h1>
-        <p>ใส่รหัสแอดมินเพื่อเข้าจัดการระบบ</p>
-        <input type="password" id="adminCode" class="input" placeholder="••••••" autocomplete="off" autofocus>
-        <button class="btn btn-primary" style="width: 100%;">เข้าสู่แผงควบคุม</button>
+        <p>ล็อกอินด้วยอีเมลแอดมิน (บัญชีใน Firebase Authentication)</p>
+        <input id="adminId" type="email" class="input lock-field" placeholder="อีเมลแอดมิน" autocomplete="username" autocapitalize="off" spellcheck="false" autofocus>
+        <input type="password" id="adminPass" class="input lock-field" placeholder="รหัสผ่าน" autocomplete="current-password">
+        <button class="btn btn-primary" id="lockBtn" style="width: 100%;">เข้าสู่แผงควบคุม</button>
         <div class="lock-err" id="lockErr"></div>
     </form>
 </div>
@@ -188,15 +218,30 @@
     <div class="topbar">
         <div>
             <h1>🛠️ แผงควบคุมแอดมิน</h1>
-            <div class="sub" id="loadedAt">กำลังโหลด...</div>
+            <div class="sub"><span id="adminWho"></span> • <span id="loadedAt">กำลังโหลด...</span></div>
         </div>
         <div class="topbar-actions">
-            <button class="btn" onclick="openServerTools()">⚡ เครื่องมือทั้งเซิร์ฟ</button>
+            <button class="btn" onclick="openServerTools()">🧰 เครื่องมือข้อมูล</button>
             <button class="btn" id="reloadBtn" onclick="loadAllUsers()">🔄 โหลดใหม่</button>
             <button class="btn btn-success" onclick="openEditor(null)">➕ เพิ่มสมาชิก</button>
-            <button class="icon-btn" title="ล็อก" onclick="lockAdmin()">🔒</button>
+            <button class="icon-btn" title="ออกจากระบบแอดมิน" onclick="lockAdmin()">🔒</button>
         </div>
     </div>
+
+    <!-- 🎮 ศูนย์ควบคุมเซิร์ฟ: อีเวนต์ + ประกาศถึงผู้เล่นทุกคน -->
+    <section class="liveops">
+        <div class="liveops-head">
+            <div>
+                <h2>🎮 ศูนย์ควบคุมเซิร์ฟ</h2>
+                <div class="hint">ผู้เล่นทุกคนเห็นทันที แจ้งเตือนเล็กๆ มุมจอ ไม่บังและไม่ขัดตอนกำลังพิมพ์</div>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-primary" onclick="openBoostForm()">⚡ อีเวนต์ EXP บูสต์</button>
+                <button class="btn" onclick="openAnnounceForm()">📢 ประกาศถึงทุกคน</button>
+            </div>
+        </div>
+        <div class="event-list" id="eventList"><div class="hint">กำลังโหลด...</div></div>
+    </section>
 
     <div class="stats">
         <div class="stat"><div class="stat-label">👥 สมาชิกทั้งหมด</div><div class="stat-value" id="sTotal">–</div></div>
@@ -270,6 +315,7 @@
                 <label class="field">รหัสผ่าน<input id="ePass" class="input" autocomplete="off" spellcheck="false"></label>
             </div>
             <div class="hint" id="eRenameHint"></div>
+            <label class="check-row"><input type="checkbox" id="eAdmin"> 🛡️ ไอดีแอดมินในเกม (เปิดหลายเครื่องพร้อมกันได้ ไม่โดนเตะ)</label>
         </div>
 
         <div class="section">
@@ -305,6 +351,23 @@
         </div>
 
         <div class="section">
+            <div class="section-title">🆙 เลเวล & บัตร</div>
+            <div class="grid-2">
+                <label class="field">เลเวล (1–100)<input id="eLevel" class="input" type="number" min="1" max="100" oninput="setLevelFromInput()"></label>
+                <label class="field">EXP เลเวลสะสม<input id="eLvXp" class="input" type="number" min="0" oninput="updateLevelPreview()"></label>
+            </div>
+            <div class="hint" id="eLvHint"></div>
+            <div class="grid-2">
+                <label class="field">🪙 เหรียญ<input id="eCoins" class="input" type="number" min="0"></label>
+                <label class="field">🎖️ บัตร EXP ยศ x2<input id="eCardRank" class="input" type="number" min="0"></label>
+                <label class="field">📘 บัตร EXP เลเวล x2<input id="eCardLevel" class="input" type="number" min="0"></label>
+                <label class="field">🪙 บัตรเหรียญ x2<input id="eCardCoin" class="input" type="number" min="0"></label>
+            </div>
+            <div class="hint">บัตรทุกแบบใช้ได้ 1 ชั่วโมง</div>
+            <div class="hint" id="eBoostHint"></div>
+        </div>
+
+        <div class="section">
             <div class="section-title">📜 ประวัติการพิมพ์ <button class="btn btn-sm btn-danger" onclick="clearHistory()">ล้างทั้งหมด</button></div>
             <div class="history" id="eHistory"></div>
         </div>
@@ -330,27 +393,23 @@
 
 <div class="toasts" id="toasts"></div>
 
-<script src="stats.js?v=106"></script>
-<script src="avatar-tools.js?v=106"></script>
+<script src="firebase-config.js?v=118"></script>
+<script src="stats.js?v=113"></script>
+<script src="avatar-tools.js?v=109"></script>
+<script src="levels.js?v=118"></script>
 <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, deleteDoc, writeBatch, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    const fbConfig = {
-        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw",
-        authDomain: "pimthai-e16c3.firebaseapp.com",
-        projectId: "pimthai-e16c3",
-        storageBucket: "pimthai-e16c3.firebasestorage.app",
-        messagingSenderId: "955936818307",
-        appId: "1:955936818307:web:273fa00d07f36894d207b6"
-    };
-    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    const app = !getApps().length ? initializeApp(window.FIREBASE_CONFIG) : getApp();
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // ⚠️ รหัสนี้กันได้แค่คนทั่วไป ไม่ใช่ระบบความปลอดภัยจริง (ใครเปิดโค้ดก็เห็น และฐานข้อมูลยังเปิดให้เขียนอยู่)
-    const ADMIN_CODE = "999999";
+    // เข้าหลังบ้าน = ล็อกอิน Firebase Authentication ด้วยอีเมลแอดมิน
+    // สิทธิ์จริงอยู่ที่ Firestore Rules (firestore.rules → adminEmails) ฐานข้อมูลยอมให้แก้ EXP/เหรียญเฉพาะอีเมลในรายชื่อนั้น
+    let adminId = null;
     const IMGBB_API_KEY = "69dc1d1d5c746220fd5d13c2f66613b0";
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyn-42qkA8MP5LD5kD8_9Wl6SHjbhlByRRI0Tt0R40FKPRSZgNnRxwFaOjAUJ0RwmvI/exec";
     const ONLINE_MS = 15 * 60 * 1000;
     const PAGE = 50;
     const DEFAULT_PIC = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzk0YTNiOCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE3IiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTIwIDEwMCBDMjAgNjUgMzAgNTUgNTAgNTUgQzcwIDU1IDgwIDY1IDgwIDEwMCBaIiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+";
@@ -372,6 +431,17 @@
     const nameOf = (id, d) => d.displayName || id;
     // ตัวคูณแบบเดียวกับหน้าเกม: ไม่ได้ตั้ง = 10, ตั้ง 0 = 0 จริงๆ
     const multOf = v => (v === undefined || v === null || v === '' || !(Number(v) >= 0)) ? 10 : Number(v);
+    // ยศ/เลเวลที่บันทึกคู่กับ EXP (Rules ใช้ตรวจเหรียญเลื่อนยศ/บัตรเลเวลอัปของผู้เล่น) → แก้ EXP เมื่อไหร่ต้องตั้งให้ตรงด้วย
+    function progressOf({ exp, lvXp }) {
+        const out = {};
+        if (exp !== undefined) {
+            const name = rankOf(exp).current.name;
+            out.rank = name;
+            out.rankIdx = Math.max(0, (window.rankData || []).findIndex(r => r.name === name));
+        }
+        if (lvXp !== undefined && window.Levels) out.level = window.Levels.info(lvXp).level;
+        return out;
+    }
 
     function ago(ts) {
         if (!ts) return 'ไม่เคย';
@@ -409,20 +479,58 @@
     }
 
     // ---------- ล็อก ----------
-    window.unlock = function(e) {
+    // ลองเขียนเอกสารที่ Rules ให้เฉพาะแอดมินเขียน → ผ่าน = เป็นแอดมินจริง
+    async function checkAdmin(user) {
+        try {
+            await setDoc(doc(db, "server", "adminPing"), { by: user.email, at: Date.now() });
+            return true;
+        } catch (err) {
+            if (err.code === 'permission-denied') return false;
+            throw err;
+        }
+    }
+
+    window.unlock = async function(e) {
         e.preventDefault();
-        if ($('adminCode').value !== ADMIN_CODE) { $('lockErr').textContent = '❌ รหัสไม่ถูก'; return; }
-        sessionStorage.setItem('adminUnlocked', '1');
-        startApp();
+        const email = $('adminId').value.trim();
+        const pass = $('adminPass').value;
+        if (!email || !pass) { $('lockErr').textContent = 'กรอกอีเมลและรหัสผ่าน'; return; }
+        $('lockBtn').disabled = true;
+        $('lockErr').textContent = '';
+        try {
+            const { user } = await signInWithEmailAndPassword(auth, email, pass);
+            if (await checkAdmin(user)) startApp(user);
+            else { await signOut(auth); $('lockErr').textContent = '⛔ อีเมลนี้ไม่มีสิทธิ์แอดมิน (ต้องอยู่ใน adminEmails ของ Rules)'; }
+        } catch (err) {
+            const bad = ['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email'].includes(err.code);
+            $('lockErr').textContent = bad ? '❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง'
+                : err.code === 'auth/too-many-requests' ? '⏳ ใส่ผิดหลายครั้ง รอสักครู่แล้วลองใหม่'
+                : ['auth/operation-not-allowed', 'auth/configuration-not-found'].includes(err.code) ? '⚠️ ยังไม่ได้เปิด Authentication → Email/Password ใน Firebase Console'
+                : '❌ เชื่อมต่อไม่ได้: ' + err.message;
+        }
+        $('lockBtn').disabled = false;
     };
-    window.lockAdmin = function() {
-        sessionStorage.removeItem('adminUnlocked');
+    window.lockAdmin = async function() {
+        await signOut(auth).catch(() => {});
         location.reload();
     };
-    function startApp() {
+    function startApp(user) {
+        if (adminId) return;
+        adminId = user.email;
+        $('adminWho').textContent = `👤 ${user.email}`;
         $('lockScreen').classList.add('hidden');
         $('app').classList.remove('hidden');
         loadAllUsers();
+        watchServer();
+    }
+
+    // รีเฟรชหน้าแล้วไม่ต้องล็อกอินใหม่ (Firebase จำการล็อกอินไว้จนกดออก) แต่ยังเช็กสิทธิ์กับ Rules ทุกครั้ง
+    function resumeSession() {
+        onAuthStateChanged(auth, async user => {
+            if (!user || adminId) return;
+            try { if (await checkAdmin(user)) startApp(user); else await signOut(auth); }
+            catch (e) { console.error(e); }
+        });
     }
 
     // ---------- โหลด ----------
@@ -486,8 +594,8 @@
                 <td class="num">${i + 1}</td>
                 <td><div class="user-cell">
                     <img class="avatar ${online ? 'online' : ''}" src="${esc(d.profilePic || DEFAULT_PIC)}" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_PIC}'">
-                    <div style="min-width:0"><div class="user-name"><span class="editable" data-edit="displayName" title="กดเพื่อแก้ชื่อ"><span>${esc(nameOf(id, d))}</span></span></div>
-                    <div class="user-rank">${icon ? `<img src="${esc(icon)}" loading="lazy">` : ''}${esc(rank)}</div></div>
+                    <div style="min-width:0"><div class="user-name"><span class="editable" data-edit="displayName" title="กดเพื่อแก้ชื่อ"><span>${esc(nameOf(id, d))}</span></span>${(window.ADMIN_IDS || []).includes(id) || d.role === 'admin' ? '<span class="admin-mark" title="ไอดีแอดมินในเกม">🛡️</span>' : ''}</div>
+                    <div class="user-rank">${icon ? `<img src="${esc(icon)}" loading="lazy">` : ''}${esc(rank)}${window.Levels ? ` • Lv.${window.Levels.info(d.lvXp).level}` : ''}</div></div>
                 </div></td>
                 <td><span class="editable uid" data-edit="id" title="กดเพื่อแก้ไอดี"><span>${esc(id)}</span></span></td>
                 <td><span class="editable pass" data-edit="password" title="กดเพื่อแก้รหัสผ่าน"><span>${esc(d.password || '—')}</span></span></td>
@@ -597,7 +705,20 @@
         $('eMult').value = multOf(d.multiplier);
         $('eWpm').value = Number(d.wpm) || 0;
         $('eLatest').value = Number(d.latest_wpm) || 0;
+        $('eLvXp').value = Number(d.lvXp) || 0;
+        $('eCoins').value = Number(d.coins) || 0;
+        $('eCardRank').value = Number(d.cards?.rankX2) || 0;
+        $('eCardLevel').value = Number(d.cards?.levelX2) || 0;
+        $('eCardCoin').value = Number(d.cards?.coinX2) || 0;
+        updateLevelPreview();
+        const now = Date.now(), b = d.boosts || {};
+        const act = [b.rankUntil > now ? `🎖️ ยศ x2 ถึง ${new Date(b.rankUntil).toLocaleString('th-TH')}` : '', b.levelUntil > now ? `📘 เลเวล x2 ถึง ${new Date(b.levelUntil).toLocaleString('th-TH')}` : '', b.coinUntil > now ? `🪙 เหรียญ x2 ถึง ${new Date(b.coinUntil).toLocaleString('th-TH')}` : ''].filter(Boolean);
+        $('eBoostHint').textContent = act.length ? 'บัตรที่เปิดอยู่: ' + act.join(' • ') : 'ไม่มีบัตรที่เปิดอยู่';
         $('eRenameHint').textContent = u ? 'เปลี่ยนไอดี = ผู้เล่นต้องใช้ไอดีใหม่ล็อกอิน (ข้อมูลย้ายตามไปครบ)' : '';
+        const builtInAdmin = u && (window.ADMIN_IDS || []).includes(u.id);
+        $('eAdmin').checked = builtInAdmin || d.role === 'admin';
+        $('eAdmin').disabled = builtInAdmin || (u && u.id === adminId); // ห้ามถอดสิทธิ์ตัวเอง / แอดมินตั้งต้น
+        $('eAdmin').parentElement.title = builtInAdmin ? 'แอดมินตั้งต้นใน firebase-config.js' : '';
         updateMultHint();
         $('ePicStatus').textContent = '';
         $('dangerZone').classList.toggle('hidden', !u);
@@ -674,6 +795,20 @@
         if (r.next && r.next.exp > r.current.exp) { $('eExp').value = r.next.exp; updateRankPreview(); }
     };
     window.setMult = function(n) { $('eMult').value = n; updateMultHint(); };
+
+    // 🆙 เลเวล: ตั้งเลเวล → EXP เลเวลเริ่มที่ต้นเลเวลนั้น / แก้ EXP → บอกว่าเป็นเลเวลเท่าไหร่
+    window.setLevelFromInput = function() {
+        const lv = parseInt($('eLevel').value);
+        if (!(lv >= 1) || !window.Levels) return;
+        $('eLvXp').value = window.Levels.startOf(Math.min(lv, window.Levels.MAX));
+        updateLevelPreview(true);
+    };
+    window.updateLevelPreview = function(fromLevel) {
+        if (!window.Levels) return;
+        const i = window.Levels.info(parseInt($('eLvXp').value) || 0);
+        if (!fromLevel) $('eLevel').value = i.level;
+        $('eLvHint').textContent = i.isMax ? 'Lv.100 (ตันแล้ว)' : `Lv.${i.level} • ${fmt(i.into)} / ${fmt(i.need)} EXP ถึง Lv.${i.level + 1}`;
+    };
     window.updateMultHint = function() {
         const m = multOf($('eMult').value);
         $('eMultHint').textContent = `ตัวอย่าง: พิมพ์ถูก 60 คำ × ${m} = ได้ ${fmt(Math.round(60 * m))} EXP`;
@@ -711,7 +846,11 @@
             wpm: Math.max(0, parseInt($('eWpm').value) || 0),
             latest_wpm: Math.max(0, parseInt($('eLatest').value) || 0),
             profilePic: editing.pic || '',
-            history: editing.history
+            history: editing.history,
+            lvXp: Math.max(0, parseInt($('eLvXp').value) || 0),
+            coins: Math.max(0, parseInt($('eCoins').value) || 0),
+            cards: { rankX2: Math.max(0, parseInt($('eCardRank').value) || 0), levelX2: Math.max(0, parseInt($('eCardLevel').value) || 0), coinX2: Math.max(0, parseInt($('eCardCoin').value) || 0) },
+            role: $('eAdmin').checked ? 'admin' : ''
         };
 
         const btn = $('saveBtn');
@@ -720,7 +859,7 @@
             const oldId = editing.id;
             if (!oldId) {
                 if ((await getDoc(doc(db, "users", id))).exists()) throw new Error(`ไอดี "${id}" มีคนใช้แล้ว`);
-                await setDoc(doc(db, "users", id), { ...fields, username: id, rank: rankOf(exp).current.name, created_at: Date.now() });
+                await setDoc(doc(db, "users", id), { ...fields, ...progressOf({ exp, lvXp: fields.lvXp }), username: id, created_at: Date.now() });
                 toast(`✅ เพิ่ม ${displayName} แล้ว`);
             } else {
                 // เขียนเฉพาะช่องที่แอดมินแก้จริง → ไม่ทับ EXP/ประวัติที่ผู้เล่นเพิ่งได้ระหว่างเปิดแผงนี้ค้างไว้
@@ -728,14 +867,17 @@
                 const before = {
                     displayName: nameOf(oldId, o), password: String(o.password ?? ''), exp: Number(o.exp) || 0,
                     multiplier: multOf(o.multiplier), wpm: Number(o.wpm) || 0, latest_wpm: Number(o.latest_wpm) || 0,
-                    profilePic: o.profilePic || '', history: o.history || []
+                    profilePic: o.profilePic || '', history: o.history || [], role: o.role || '',
+                    lvXp: Number(o.lvXp) || 0, coins: Number(o.coins) || 0,
+                    cards: { rankX2: Number(o.cards?.rankX2) || 0, levelX2: Number(o.cards?.levelX2) || 0, coinX2: Number(o.cards?.coinX2) || 0 }
                 };
                 const changes = {};
                 for (const k in fields) {
-                    const same = k === 'history' ? JSON.stringify(fields[k]) === JSON.stringify(before[k]) : fields[k] === before[k];
+                    const same = typeof fields[k] === 'object' ? JSON.stringify(fields[k]) === JSON.stringify(before[k]) : fields[k] === before[k];
                     if (!same) changes[k] = fields[k];
                 }
-                if ('exp' in changes) changes.rank = rankOf(exp).current.name;
+                if ('exp' in changes) Object.assign(changes, progressOf({ exp }));
+                if ('lvXp' in changes) Object.assign(changes, progressOf({ lvXp: fields.lvXp }));
 
                 if (oldId !== id) await renameUser(oldId, id, changes);
                 else if (Object.keys(changes).length) await setDoc(doc(db, "users", id), changes, { merge: true });
@@ -778,11 +920,10 @@
         const choice = await new Promise(resolve => {
             const box = document.createElement('div');
             box.className = 'dialog';
-            box.innerHTML = `<div class="dialog-card"><h3>⚡ เครื่องมือทั้งเซิร์ฟ</h3><p>มีผลกับผู้เล่นทั้งหมด ${fmt(users.length)} คน</p>
+            box.innerHTML = `<div class="dialog-card"><h3>🧰 เครื่องมือข้อมูล</h3><p>มีผลกับผู้เล่นทั้งหมด ${fmt(users.length)} คน</p>
                 <div style="display:flex;flex-direction:column;gap:8px">
                     <button class="btn" data-c="mult">🎯 ตั้งตัวคูณ EXP ให้ทุกคน (อีเวนต์ EXP x2 ฯลฯ)</button>
                     <button class="btn" data-c="gift">🎁 แจก EXP ให้ทุกคน</button>
-                    <button class="btn" data-c="pics">🖼️ ดึงรูปโปรไฟล์เก่าจากชีตเข้า Firebase</button>
                     <button class="btn" data-c="0">ปิด</button>
                 </div></div>`;
             box.addEventListener('click', e => { const c = e.target.dataset.c; if (c !== undefined || e.target === box) { box.remove(); resolve(c && c !== '0' ? c : null); } });
@@ -798,54 +939,10 @@
             const v = await ask({ title: '🎁 แจก EXP ทุกคน', text: 'ใส่จำนวน EXP ที่จะบวกให้ทุกคน (ใส่ติดลบ = หัก)', okText: 'แจกเลย', input: { type: 'number', value: '1000' } });
             const n = parseInt(v);
             if (v === null || !n) return;
-            await runBulk(`แจก ${fmt(n)} EXP ให้ทุกคน`, () => ({ exp: increment(n) }), u => { u.data.exp = Math.max(0, (u.data.exp || 0) + n); });
+            const after = u => Math.max(0, (Number(u.data.exp) || 0) + n);
+            await runBulk(`แจก ${fmt(n)} EXP ให้ทุกคน`, u => ({ exp: increment(n), ...progressOf({ exp: after(u) }) }), u => { u.data.exp = after(u); });
         }
-        if (choice === 'pics') await importSheetPics();
     };
-
-    // รูปจากระบบเก่าอยู่ในชีตอย่างเดียว → คัดลอกเข้า Firebase ครั้งเดียว (เติมเฉพาะคนที่ยังไม่มีรูป ไม่ทับรูปใหม่)
-    async function importSheetPics() {
-        toast('⏳ กำลังโหลดรูปจากชีต (ชีตช้า อาจนาน 30 วินาที)...');
-        let sheet;
-        try {
-            sheet = await (await fetch(SCRIPT_URL + "?action=getProfiles&_t=" + Date.now())).json();
-        } catch (err) { return toast('❌ โหลดชีตไม่ได้: ' + err.message, 'err'); }
-
-        const byId = new Map(users.map(u => [u.id, u]));
-        const todo = Object.entries(sheet || {}).filter(([name, pic]) => {
-            const u = byId.get(name);
-            return u && !u.data.profilePic && typeof pic === 'string' && /^(https?:|data:image\/)/.test(pic);
-        });
-        if (!todo.length) return toast('ไม่มีรูปเก่าที่ต้องดึงแล้ว ทุกคนที่มีรูปในชีตมีรูปใน Firebase ครบ');
-        if (!await ask({ title: '🖼️ ดึงรูปเก่า?', text: `พบ ${fmt(todo.length)} คนที่มีรูปในชีตแต่ไม่มีใน Firebase<br>จะคัดลอกให้เฉพาะคนที่ยังไม่มีรูป (ไม่ทับรูปที่ตั้งใหม่)`, okText: 'ดึงรูปเลย' })) return;
-
-        toast(`⏳ กำลังย่อและบันทึก ${fmt(todo.length)} รูป...`);
-        let done = 0;
-        try {
-            for (let i = 0; i < todo.length; i += 100) {
-                const batch = writeBatch(db);
-                for (const [name, pic] of todo.slice(i, i + 100)) {
-                    let url = pic;
-                    // รูปเก่าที่ฝังในชีตบางรูปใหญ่ → ย่อให้เท่ารูปใหม่ ตารางอันดับจะได้โหลดไว
-                    if (pic.startsWith('data:') && pic.length > 30000) {
-                        try {
-                            const blob = await (await fetch(pic)).blob();
-                            const r = await window.AvatarTools.prepare(new File([blob], 'old', { type: blob.type }));
-                            if (r.inline) url = r.inline;
-                        } catch (e) { console.warn('ย่อรูปเก่าไม่ได้ ใช้ของเดิม:', name, e); }
-                    }
-                    batch.set(doc(db, "users", name), { profilePic: url }, { merge: true });
-                    byId.get(name).data.profilePic = url;
-                    done++;
-                }
-                await batch.commit();
-            }
-            applyView(false);
-            toast(`✅ ดึงรูปเก่าคืนมาแล้ว ${fmt(done)} คน`);
-        } catch (err) {
-            toast(`❌ ทำได้ ${fmt(done)} คนแล้วพัง: ${err.message}`, 'err');
-        }
-    }
 
     async function runBulk(label, build, applyLocal) {
         if (!await ask({ title: 'ยืนยัน?', text: `${esc(label)} (${fmt(users.length)} คน)`, okText: 'ยืนยัน', danger: true })) return;
@@ -858,8 +955,203 @@
         } catch (err) { toast('❌ ' + err.message, 'err'); }
     }
 
+    // =========================================================
+    // 🎮 ศูนย์ควบคุมเซิร์ฟ (เก็บใน server/live → หน้าเกมทุกเครื่องฟังแบบสด)
+    // อีเวนต์: { id, type: 'boost' | 'announce', factor, title, message, level, startAt, endAt, createdBy, createdAt }
+    // =========================================================
+    let serverEvents = [];
+    let serverError = null;
+    const liveRef = () => doc(db, "server", "live");
+    const MIN = 60 * 1000;
+
+    function fmtDur(ms) {
+        const s = Math.max(0, Math.round(ms / 1000));
+        const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+        return h ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
+    }
+    const fmtTime = ts => new Date(ts).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const fmtLen = min => min >= 60 ? (min % 60 ? `${Math.floor(min / 60)} ชม. ${min % 60} นาที` : `${min / 60} ชั่วโมง`) : `${min} นาที`;
+
+    function watchServer() {
+        onSnapshot(liveRef(), snap => {
+            serverError = null;
+            serverEvents = (snap.exists() && Array.isArray(snap.data().events)) ? snap.data().events : [];
+            renderEvents();
+        }, err => {
+            serverError = err;
+            renderEvents();
+        });
+        setInterval(renderEvents, 1000);
+    }
+
+    function renderEvents() {
+        const box = $('eventList');
+        if (serverError) {
+            box.innerHTML = `<div class="event"><div class="event-icon">⚠️</div><div class="event-body"><div class="event-title">ยังใช้ศูนย์ควบคุมเซิร์ฟไม่ได้</div>
+                <div class="event-meta">${serverError.code === 'permission-denied' ? 'ต้องเพิ่ม Rules ของ <b>server</b> ใน Firebase Console ก่อน (ดูวิธีในแชท)' : esc(serverError.message)}</div></div></div>`;
+            return;
+        }
+        const now = Date.now();
+        const list = serverEvents.filter(e => e.endAt > now).sort((a, b) => a.startAt - b.startAt);
+        if (!list.length) {
+            box.innerHTML = `<div class="hint">ยังไม่มีอีเวนต์หรือประกาศ • สร้างอีเวนต์ EXP บูสต์ หรือประกาศถึงทุกคนได้จากปุ่มด้านบน</div>`;
+            return;
+        }
+        box.innerHTML = list.map(e => {
+            const live = e.startAt <= now;
+            const icon = e.type === 'boost' ? '⚡' : ({ good: '🎉', warn: '⚠️' }[e.level] || '📢');
+            const title = e.type === 'boost' ? `EXP x${e.factor} ทั้งเซิร์ฟ` : esc(e.message);
+            const when = live ? `จบใน <span class="countdown">${fmtDur(e.endAt - now)}</span>` : `เริ่มในอีก <span class="countdown">${fmtDur(e.startAt - now)}</span>`;
+            return `<div class="event ${live ? 'live' : ''}">
+                <div class="event-icon">${icon}</div>
+                <div class="event-body">
+                    <div class="event-title">${title}<span class="badge ${live ? 'live' : 'soon'}">${live ? 'กำลังทำงาน' : 'รอเริ่ม'}</span></div>
+                    <div class="event-meta">${when} • ${fmtTime(e.startAt)}–${fmtTime(e.endAt)}${e.type === 'boost' && e.message ? ' • ' + esc(e.message) : ''}${e.createdBy ? ' • โดย ' + esc(e.createdBy) : ''}</div>
+                </div>
+                <button class="btn btn-sm btn-danger" onclick="cancelEvent('${esc(e.id)}')">${live ? 'หยุดเลย' : 'ยกเลิก'}</button>
+            </div>`;
+        }).join('');
+    }
+
+    // อ่านของล่าสุด → แก้ → เขียนกลับ (ล้างอีเวนต์ที่จบเกิน 1 ชม. ทิ้งไปด้วย เอกสารจะได้ไม่บวม)
+    async function updateEvents(change) {
+        const snap = await getDoc(liveRef());
+        const current = (snap.exists() && Array.isArray(snap.data().events)) ? snap.data().events : [];
+        const next = change(current).filter(e => e.endAt > Date.now() - 60 * MIN);
+        // สรุปบูสต์ที่ยังไม่จบไว้ให้ Rules ใช้คิดเพดาน EXP ต่อตา (Rules วนอ่านรายการอีเวนต์เองไม่ได้)
+        const boosts = next.filter(e => e.type === 'boost' && e.endAt > Date.now());
+        await setDoc(liveRef(), {
+            events: next, updatedAt: Date.now(),
+            boostMax: boosts.length ? Math.max(...boosts.map(e => Number(e.factor) || 1)) : 1,
+            boostEnd: boosts.length ? Math.max(...boosts.map(e => e.endAt)) : 0
+        }, { merge: true });
+    }
+
+    window.cancelEvent = async function(id) {
+        const e = serverEvents.find(x => x.id === id);
+        if (!e || !await ask({ title: e.startAt <= Date.now() ? 'หยุดอีเวนต์นี้เลย?' : 'ยกเลิกอีเวนต์นี้?', text: 'ผู้เล่นจะเห็นว่าอีเวนต์จบแล้ว', okText: 'ยืนยัน', danger: true })) return;
+        try {
+            // หยุดกลางคัน = ตั้งเวลาจบเป็นตอนนี้ (ผู้เล่นได้แจ้งเตือนว่าจบ) / ยังไม่เริ่ม = ลบทิ้ง
+            await updateEvents(list => e.startAt <= Date.now()
+                ? list.map(x => x.id === id ? { ...x, endAt: Date.now() } : x)
+                : list.filter(x => x.id !== id));
+            toast('✅ เรียบร้อย');
+        } catch (err) { toast('❌ ' + err.message, 'err'); }
+    };
+
+    // ฟอร์มแบบเลือกปุ่ม (segmented) ใช้ร่วมกันทั้งอีเวนต์และประกาศ
+    function formDialog({ title, body, okText, onReady, onSubmit }) {
+        const box = document.createElement('div');
+        box.className = 'dialog';
+        box.innerHTML = `<div class="dialog-card wide"><h3>${title}</h3><div class="form-grid">${body}</div>
+            <div class="dialog-actions"><button class="btn" data-a="0">ยกเลิก</button><button class="btn btn-primary" data-a="1">${okText}</button></div></div>`;
+        const close = () => box.remove();
+        box.addEventListener('click', async e => {
+            const segBtn = e.target.closest('.seg button');
+            if (segBtn) {
+                segBtn.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === segBtn));
+                box.dispatchEvent(new Event('change'));
+                return;
+            }
+            if (e.target === box || e.target.dataset.a === '0') return close();
+            if (e.target.dataset.a === '1') {
+                e.target.disabled = true;
+                if (await onSubmit(box) !== false) close(); else e.target.disabled = false;
+            }
+        });
+        box.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+        document.body.append(box);
+        onReady && onReady(box);
+        return box;
+    }
+    const segVal = (box, name) => { const b = box.querySelector(`.seg[data-name="${name}"] button.on`); return b ? b.dataset.v : null; };
+
+    window.openBoostForm = function() {
+        formDialog({
+            title: '⚡ อีเวนต์ EXP บูสต์ทั้งเซิร์ฟ',
+            okText: 'ตั้งอีเวนต์',
+            body: `
+                <div class="field">คูณ EXP เพิ่ม (คูณทับตัวคูณของแต่ละคน)
+                    <div class="seg" data-name="factor"><button data-v="1.5">x1.5</button><button data-v="2" class="on">x2</button><button data-v="3">x3</button><button data-v="5">x5</button><button data-v="custom">กำหนดเอง</button></div>
+                    <input id="bfFactor" class="input hidden" type="number" min="1" step="0.1" placeholder="เช่น 2.5">
+                </div>
+                <div class="field">เริ่มเมื่อไหร่
+                    <div class="seg" data-name="start"><button data-v="0" class="on">ทันที</button><button data-v="5">อีก 5 นาที</button><button data-v="15">อีก 15 นาที</button><button data-v="30">อีก 30 นาที</button><button data-v="60">อีก 1 ชม.</button><button data-v="at">ตั้งเวลา</button></div>
+                    <input id="bfStartAt" class="input hidden" type="datetime-local">
+                </div>
+                <div class="field">นานเท่าไหร่
+                    <div class="seg" data-name="len"><button data-v="15">15 นาที</button><button data-v="30">30 นาที</button><button data-v="60" class="on">1 ชม.</button><button data-v="120">2 ชม.</button><button data-v="360">6 ชม.</button><button data-v="1440">24 ชม.</button></div>
+                </div>
+                <label class="field">ข้อความเพิ่มเติม (ไม่ใส่ก็ได้)
+                    <input id="bfMsg" class="input" maxlength="80" placeholder="เช่น ฉลองคนครบ 100 คน!">
+                </label>
+                <div class="field">ผู้เล่นจะเห็นแบบนี้<div class="preview-toast" id="bfPreview"></div></div>
+                <div class="hint">ระหว่างอีเวนต์ ตาที่เล่นได้ EXP = คำถูก × ตัวคูณของผู้เล่น × บูสต์ • ตาไหนคาบเกี่ยวช่วงอีเวนต์ก็ได้บูสต์ • ถ้ามีหลายอีเวนต์ซ้อนกันใช้ตัวที่สูงสุด</div>`,
+            onReady: box => {
+                const read = () => {
+                    const f = segVal(box, 'factor');
+                    box.querySelector('#bfFactor').classList.toggle('hidden', f !== 'custom');
+                    box.querySelector('#bfStartAt').classList.toggle('hidden', segVal(box, 'start') !== 'at');
+                    const factor = f === 'custom' ? Number(box.querySelector('#bfFactor').value) || 0 : Number(f);
+                    const st = segVal(box, 'start');
+                    const startText = st === '0' ? 'เริ่มแล้ว!' : st === 'at' ? 'เริ่มตามเวลาที่ตั้ง' : `เริ่มในอีก ${st} นาที`;
+                    const msg = box.querySelector('#bfMsg').value.trim();
+                    box.querySelector('#bfPreview').innerHTML = `<span style="font-size:22px">⚡</span><div><b>EXP x${factor || '?'} ทั้งเซิร์ฟ ${startText}</b>${esc(msg) || `นาน ${fmtLen(Number(segVal(box, 'len')))} รีบมาพิมพ์!`}</div>`;
+                };
+                box.addEventListener('change', read);
+                box.addEventListener('input', read);
+                const d = new Date(Date.now() + 60 * MIN); d.setSeconds(0, 0);
+                box.querySelector('#bfStartAt').value = new Date(d - d.getTimezoneOffset() * MIN).toISOString().slice(0, 16);
+                read();
+            },
+            onSubmit: async box => {
+                const f = segVal(box, 'factor');
+                const factor = f === 'custom' ? Number(box.querySelector('#bfFactor').value) : Number(f);
+                if (!(factor > 1) || factor > 100) { toast('ตัวคูณต้องมากกว่า 1 (และไม่เกิน 100)', 'err'); return false; }
+                const st = segVal(box, 'start');
+                const startAt = st === 'at' ? new Date(box.querySelector('#bfStartAt').value).getTime() : Date.now() + Number(st) * MIN;
+                if (!(startAt > Date.now() - MIN)) { toast('เวลาเริ่มต้องเป็นอนาคต', 'err'); return false; }
+                const endAt = startAt + Number(segVal(box, 'len')) * MIN;
+                const ev = { id: 'ev' + Date.now().toString(36), type: 'boost', factor, message: box.querySelector('#bfMsg').value.trim(), startAt, endAt, createdBy: adminId, createdAt: Date.now() };
+                try {
+                    await updateEvents(list => [...list, ev]);
+                    toast(`✅ ตั้งอีเวนต์ EXP x${factor} แล้ว`);
+                } catch (err) { toast('❌ ' + (err.code === 'permission-denied' ? 'ต้องเพิ่ม Rules ของ server ก่อน' : err.message), 'err'); return false; }
+            }
+        });
+    };
+
+    window.openAnnounceForm = function() {
+        formDialog({
+            title: '📢 ประกาศถึงผู้เล่นทุกคน',
+            okText: 'ประกาศเลย',
+            body: `
+                <label class="field">ข้อความ
+                    <input id="anMsg" class="input" maxlength="120" placeholder="เช่น คืนนี้ 22:00 ปิดปรับปรุง 10 นาที">
+                </label>
+                <div class="field">ประเภท
+                    <div class="seg" data-name="level"><button data-v="info" class="on">📢 ทั่วไป</button><button data-v="good">🎉 ข่าวดี</button><button data-v="warn">⚠️ สำคัญ</button></div>
+                </div>
+                <div class="field">โชว์ค้างไว้นาน (คนที่เพิ่งเข้าเว็บช่วงนี้ก็จะเห็น)
+                    <div class="seg" data-name="len"><button data-v="10">10 นาที</button><button data-v="30" class="on">30 นาที</button><button data-v="60">1 ชม.</button><button data-v="360">6 ชม.</button><button data-v="1440">24 ชม.</button></div>
+                </div>
+                <div class="hint">ประกาศจะ<b>ปักไว้บนหน้าเกมจนหมดเวลา</b> (ผู้เล่นกด ✕ ซ่อนเองได้ และเปิดดูย้อนหลังที่ 🔔) • คนที่กำลังพิมพ์อยู่จะเห็นหลังพิมพ์จบตา ไม่เด้งขัดกลางคัน</div>`,
+            onReady: box => box.querySelector('#anMsg').focus(),
+            onSubmit: async box => {
+                const message = box.querySelector('#anMsg').value.trim();
+                if (!message) { toast('ใส่ข้อความก่อน', 'err'); return false; }
+                const now = Date.now();
+                const ev = { id: 'an' + now.toString(36), type: 'announce', level: segVal(box, 'level'), message, startAt: now, endAt: now + Number(segVal(box, 'len')) * MIN, createdBy: adminId, createdAt: now };
+                try {
+                    await updateEvents(list => [...list, ev]);
+                    toast('✅ ประกาศแล้ว');
+                } catch (err) { toast('❌ ' + (err.code === 'permission-denied' ? 'ต้องเพิ่ม Rules ของ server ก่อน' : err.message), 'err'); return false; }
+            }
+        });
+    };
+
     // ---------- เริ่ม ----------
-    if (sessionStorage.getItem('adminUnlocked') === '1') startApp();
+    resumeSession();
 </script>
 </body>
 </html>

@@ -290,23 +290,9 @@ window.showChangePassword = function() {
     setTimeout(() => document.getElementById('darkInput1').focus(), 100);
 }
 
+// ลบบัญชีได้เฉพาะแอดมิน (Firestore Rules) กันคนอื่นแอบลบบัญชีเรา
 window.showDeleteAccount = function() {
-    window.setupDarkModal("🗑️ ยืนยันจะลบทิ้ง?", "มึงแน่ใจนะว่าจะลบบัญชี? <br><span style='color:#ef4444'>ลบแล้วข้อมูลหายหมดเกลี้ยง!</span>", "ลบแม่งเลย!", async () => {
-        let db = JSON.parse(localStorage.getItem('typingDB_Final') || '{}'); 
-        delete db[window.currentUser]; 
-        localStorage.setItem('typingDB_Final', JSON.stringify(db));
-
-        if (window.db) {
-            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-            const userRef = doc(window.db, "users", window.currentUser);
-            await deleteDoc(userRef).catch(e => console.log("Firebase Delete Error:", e));
-        }
-
-        window.closeModal('darkActionModal'); 
-        window.handleLogout(); 
-        fetch(window.SCRIPT_URL, { method: 'POST',headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'deleteUser', username: window.currentUser }) }).catch(()=>{});
-    }, "เปลี่ยนใจแล้ว");
-    document.getElementById('darkConfirmBtn').className = "dark-btn danger";
+    window.setupDarkModal("🗑️ ลบบัญชี", "การลบบัญชีต้องให้แอดมินเป็นคนลบ (กันคนอื่นมาแอบลบบัญชีมึง)<br>อยากลบจริงทักแอดมินได้เลย", "รับทราบ", () => { window.closeModal('darkActionModal'); }, "ปิด");
 }
 
 window.showLogoutConfirm = function() { 
@@ -346,11 +332,11 @@ window.openThemeModal = function() {
     document.getElementById('themeModal').style.display = 'flex';
     const currentTheme = localStorage.getItem('theme_preference') || 'default';
     window.updateThemeButtons(currentTheme);
+    window.renderThemeCounts();
 }
 
 window.selectTheme = function(themeId) {
-    let oldTheme = document.body.className; 
-    if (!oldTheme && localStorage.getItem('theme_preference')) { oldTheme = localStorage.getItem('theme_preference'); }
+    const oldTheme = localStorage.getItem('theme_preference') || 'default';
 
     document.body.className = themeId === 'default' ? '' : themeId;
     localStorage.setItem('theme_preference', themeId);
@@ -360,23 +346,23 @@ window.selectTheme = function(themeId) {
         if(el) el.style.display = 'none';
     }, 200);
 
-    if (oldTheme && oldTheme !== 'default' && oldTheme !== themeId) {
-        let oldBadge = document.getElementById("count-" + oldTheme);
-        if (oldBadge && parseInt(oldBadge.innerText) > 0) {
-            let newVal = parseInt(oldBadge.innerText) - 1;
-            oldBadge.innerText = newVal;
-            if(newVal <= 0) oldBadge.style.display = 'none';
+    if (window.currentUser) {
+        // นับตัวเองย้ายไปธีมใหม่ทันที (ไม่ต้องรอเซิร์ฟเวอร์)
+        const counts = window.themeOnlineCounts || {};
+        if (oldTheme !== themeId && window.themeOnlineIds && window.themeOnlineIds.get(window.currentUser) === oldTheme) {
+            counts[oldTheme] = Math.max(0, (counts[oldTheme] || 1) - 1);
+            counts[themeId] = (counts[themeId] || 0) + 1;
+            window.themeOnlineIds.set(window.currentUser, themeId);
+            window.themeOnlineCounts = counts;
         }
-    }
-    if (themeId && themeId !== 'default') {
-        let newBadge = document.getElementById("count-" + themeId);
-        if (newBadge) {
-            newBadge.innerText = parseInt(newBadge.innerText || 0) + 1;
-            newBadge.style.display = 'block';
-        }
-    }
+        window.renderThemeCounts();
 
-    if (typeof window.currentUser !== 'undefined' && window.currentUser) {
+        // บันทึกลง Firebase → คนอื่นเห็นตัวเลขเปลี่ยนแบบสด
+        window.getFirebaseDB().then(async db => {
+            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            await setDoc(doc(db, "users", window.currentUser), { theme: themeId, last_online: Date.now() }, { merge: true });
+        }).catch(err => console.log("บันทึกธีมไม่ผ่าน:", err));
+
         fetch(window.SCRIPT_URL, {
             method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ action: "updateTheme", username: window.currentUser, theme: themeId })
@@ -384,30 +370,50 @@ window.selectTheme = function(themeId) {
     }
 }
 
+// ปุ่มโหมดมืดชื่อ btn-theme-default (ไม่ใช่ btn-default) ต้องแปลงก่อน ไม่งั้นไม่ขึ้นกรอบว่ากำลังใช้อยู่
+const themeButtonId = id => id === 'default' ? 'btn-theme-default' : 'btn-' + id;
+
 window.updateThemeButtons = function(activeId) {
     document.querySelectorAll('.theme-option-btn').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById('btn-' + activeId);
+    const activeBtn = document.getElementById(themeButtonId(activeId));
     if(activeBtn) activeBtn.classList.add('active');
 }
 
-window.updateThemeCounts = function(dataArray) {
-    let counts = null;
-    dataArray.forEach(item => { if (item.__THEME_COUNTS__) counts = item.__THEME_COUNTS__; });
-    if (!counts && dataArray.length > 0 && dataArray[0].theme_counts) counts = dataArray[0].theme_counts;
+// 👥 จำนวนคนออนไลน์ที่ใช้แต่ละธีม (ข้อมูลมาจากตัวนับออนไลน์ใน leaderboard.js) + 🔥 ธีมยอดฮิต
+window.renderThemeCounts = function() {
+    const counts = window.themeOnlineCounts || {};
+    const max = Math.max(0, ...Object.values(counts));
+    document.querySelectorAll('.theme-option-btn').forEach(btn => {
+        const m = (btn.getAttribute('onclick') || '').match(/selectTheme\('([^']+)'\)/);
+        if (!m) return;
+        const n = counts[m[1]] || 0;
+        let badge = btn.querySelector('.tc-badge');
+        if (!n) { if (badge) badge.remove(); return; }
+        if (!badge) { badge = document.createElement('span'); badge.className = 'tc-badge'; btn.append(badge); }
+        const hot = n === max && max > 1;
+        badge.classList.toggle('hot', hot);
+        badge.textContent = (hot ? '🔥 ' : '👥 ') + n;
+        badge.title = `ตอนนี้มี ${n} คนใช้ธีมนี้`;
+    });
 
-    if (counts) {
-        document.querySelectorAll('.theme-count-badge').forEach(el => {
-            el.innerText = "0"; el.style.display = "none";
-        });
-        for (let theme in counts) {
-            let badge = document.getElementById("count-" + theme);
-            if (badge && counts[theme] > 0) { 
-                badge.innerText = counts[theme];
-                badge.style.display = "block"; 
-            }
-        }
+    // สรุปใต้หัวข้อ: ออนไลน์กี่คน + ธีมไหนฮิตสุด
+    const modal = document.querySelector('#themeModal .modal-card');
+    if (!modal) return;
+    let sum = modal.querySelector('.tc-summary');
+    if (!sum) {
+        sum = document.createElement('p');
+        sum.className = 'tc-summary';
+        modal.querySelector('.theme-selector-grid')?.before(sum);
     }
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const topBtn = top && document.getElementById(themeButtonId(top[0]));
+    const topName = topBtn ? topBtn.innerText.trim() : '';
+    sum.innerHTML = total ? `👥 ออนไลน์ตอนนี้ <b>${total}</b> คน${topName && top[1] > 1 ? ` • ฮิตสุด: <b>${topName}</b> (${top[1]} คน)` : ''}` : '';
 }
+
+// ระบบนับธีมเก่าจากชีต ไม่ใช้แล้ว (ใช้ตัวนับออนไลน์จาก Firebase แทน)
+window.updateThemeCounts = function() {}
 
 // ==========================================
 // 🚀 ระบบอัปโหลดรูปภาพ & เช็กล็อกอิน

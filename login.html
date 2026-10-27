@@ -98,6 +98,7 @@
             background: rgba(255,59,48,0.1); color: #d70015; font-size: 14px; font-weight: 600; line-height: 1.45;
         }
         .error.show { display: flex; animation: shake 0.4s; }
+        .error.info { background: rgba(0,122,255,0.1); color: #0058c7; animation: none; }
         @keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
         .primary {
@@ -191,23 +192,16 @@
 
     <div class="foot">
         <span class="safe">🛡️ รหัสผ่านถูกซ่อนระหว่างพิมพ์ • ล็อกชั่วคราวเมื่อใส่ผิดหลายครั้ง</span>
-        <a href="https://t.me/x_Haoyun66" target="_blank" rel="noopener">ลืมไอดีหรือรหัสผ่าน? ติดต่อแอดมิน</a>
+        <a href="https://t.me/NB_HY66" target="_blank" rel="noopener">ลืมไอดีหรือรหัสผ่าน? ติดต่อแอดมิน</a>
     </div>
 </main>
 
+<script src="firebase-config.js?v=118"></script>
 <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-    const fbConfig = {
-        apiKey: "AIzaSyBq9ecmKEuBPOgnfWKDFlo3h4QnAEohmmw",
-        authDomain: "pimthai-e16c3.firebaseapp.com",
-        projectId: "pimthai-e16c3",
-        storageBucket: "pimthai-e16c3.firebasestorage.app",
-        messagingSenderId: "955936818307",
-        appId: "1:955936818307:web:273fa00d07f36894d207b6"
-    };
-    const app = !getApps().length ? initializeApp(fbConfig) : getApp();
+    const app = !getApps().length ? initializeApp(window.FIREBASE_CONFIG) : getApp();
     const db = getFirestore(app);
 
     const $ = id => document.getElementById(id);
@@ -235,7 +229,7 @@
     function showError(id, msg, field) {
         const el = $(id);
         el.innerHTML = '⚠️ <span>' + msg + '</span>';
-        el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+        el.classList.remove('show', 'info'); void el.offsetWidth; el.classList.add('show');
         document.querySelectorAll('.input-wrap input.bad').forEach(i => i.classList.remove('bad'));
         if (field) { $(field).classList.add('bad'); $(field).focus(); }
     }
@@ -288,6 +282,16 @@
         lockTimer = setInterval(tick, 1000);
     }
     if (lockState().until > Date.now()) startLockCountdown();
+
+    // ถูกพากลับมาหน้านี้เอง (ไอดีถูกเปลี่ยน/ลบ หรือมีคนล็อกอินจากเครื่องอื่น) → บอกเหตุผล ไม่ให้งงว่าเด้งออกทำไม
+    const logoutReason = localStorage.getItem('logoutReason');
+    if (logoutReason) {
+        localStorage.removeItem('logoutReason');
+        const box = $('loginError');
+        box.textContent = 'ℹ️ ' + logoutReason;
+        box.classList.add('show', 'info');
+        $('loginId').addEventListener('input', () => box.classList.remove('show', 'info'), { once: true });
+    }
 
     // ---------- เข้าสู่ระบบ ----------
     async function findAccount(id) {
