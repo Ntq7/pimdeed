@@ -9,7 +9,8 @@
         window.currentUser = localStorage.getItem('currentUser') || localStorage.getItem('isLoggedIn');
         if (!window.currentUser) window.location.replace("login.html");
     </script>
-    <link rel="icon" type="image/png" href="https://i.ibb.co/RkGB4YsP/image.png">
+    <!-- แก้เป็น ./ เพื่อให้อ้างอิงโฟลเดอร์ logo จากตำแหน่งปัจจุบัน -->
+    <link rel="icon" type="image/png" href="./logo/HHHHH.png?v=3">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     
@@ -37,10 +38,10 @@
         
         <div class="top-actions">
             <button class="btn-top btn-top-gold" onclick="showRanking()">
-                <img src="https://i.ibb.co/7dztkrMV/image.png" alt=""> อันดับความเร็วสูงสุด
+                <img src="/logo/H.png" alt=""> อันดับความเร็วสูงสุด
             </button>
             <button class="btn-top btn-top-sky" onclick="showRankBoard()">
-                <img src="https://img2.pic.in.th/imagec45e19e0556aa82c.png" alt=""> ทำเนียบยศ
+                <img src="/logo/H.png" alt=""> ทำเนียบยศ
             </button>
             <div id="onlineBadge" class="online-badge">
                 <span class="online-dot"></span> ออนไลน์ <span id="onlineCount">1</span> คน
@@ -138,156 +139,156 @@
 <div class="modal-overlay" id="themeModal">
     <div class="modal-card" style="max-width: 750px; padding: 30px;">
         <span class="close-modal-x" onclick="closeModal('themeModal')" style="font-family: sans-serif;">×</span>
-        <h2 style="margin-top: 0; margin-bottom: 5px;"><img src="https://i.ibb.co/G313Vvxz/image.png" style="width: 50px; height: 50px; object-fit: contain; vertical-align: middle;"> เ ลื อ ก ธี ม ข อ ง มึ ง</h2>
+        <h2 style="margin-top: 0; margin-bottom: 5px;"><img src="/logo/H.png" style="width: 50px; height: 50px; object-fit: contain; vertical-align: middle;"> เ ลื อ ก ธี ม ข อ ง มึ ง</h2>
         <p style="margin-top: 0; margin-bottom: 20px;">สลับโหมดตามอารมณ์ความเดือดได้เลย!</p>
         
         <div class="theme-selector-grid">
             <button class="theme-option-btn" id="btn-theme-sf" onclick="selectTheme('theme-sf')">
-                <span class="theme-icon"><img loading="lazy" src="https://play-lh.googleusercontent.com/NytYEXtRpDKvuebqOe8SxqrnFvBqJzgcCykgr6DzGFaOEPbCPpSca-8xPdVU0YSP08I" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcc00">SF (ทหาร)</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/SF.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcc00">SF (ทหาร)</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-pb" onclick="selectTheme('theme-pb')">
-                <span class="theme-icon"><img loading="lazy" src="https://play-lh.googleusercontent.com/IGOlY-TMU0cGW_I8EFKBkLACxPLu1TQqbqaqx7NUsGMyjNWIO1NdhwdBrq-71pUAHw" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00aaff">PB</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/PB.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00aaff">PB</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-songkran" onclick="selectTheme('theme-songkran')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/BVBN0Mvw/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00bfff">สงกรานต์</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/Songkran.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00bfff">สงกรานต์</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-cny" onclick="selectTheme('theme-cny')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/j93YBRj6/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffd700">ตรุษจีน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/TJ.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffd700">ตรุษจีน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-valen" onclick="selectTheme('theme-valen')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/wFJ7gZY0/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff1493">วาเลนไทน์</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/VLT.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff1493">วาเลนไทน์</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-hell" onclick="selectTheme('theme-hell')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/HL0FMrSq/image.png" style="width: 80px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff4500">นรกเดือด</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/NALOK.png" style="width: 80px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff4500">นรกเดือด</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-space" onclick="selectTheme('theme-space')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/HTZgBTKX/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ffff">จักรวาล</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/GALAXY.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ffff">จักรวาล</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-halloween" onclick="selectTheme('theme-halloween')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/KzrVDdXc/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff7518">ฮาโลวีน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/HALLOWEEN.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff7518">ฮาโลวีน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-liv" onclick="selectTheme('theme-liv')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/0V9gZwh4/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#c8102e">LIVERPOOL</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/LIV.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#c8102e">LIVERPOOL</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-manu" onclick="selectTheme('theme-manu')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1J0yzxkK/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#da291c">MAN UTD</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/MANU.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#da291c">MAN UTD</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-mancity" onclick="selectTheme('theme-mancity')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/prXXgXTD/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#6cabdd">MAN CITY</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/MANCITY.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#6cabdd">MAN CITY</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-arsenal" onclick="selectTheme('theme-arsenal')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/BH4ZcTfX/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ef0107">ARSENAL</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/ARSENAL.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ef0107">ARSENAL</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-chelsea" onclick="selectTheme('theme-chelsea')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/7JV4hftp/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#034694">CHELSEA</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/SHELSEA.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#034694">CHELSEA</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-rmadrid" onclick="selectTheme('theme-rmadrid')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/8gnV3p97/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#FEBE10">R.MADRID</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/MADRID.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#FEBE10">R.MADRID</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-barca" onclick="selectTheme('theme-barca')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/RGmYTx6G/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#EDBB00">BARCELONA</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/FCB.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#EDBB00">BARCELONA</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-bayern" onclick="selectTheme('theme-bayern')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1G314xZm/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#DC052D">BAYERN</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/BAYERN.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#DC052D">BAYERN</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-juve" onclick="selectTheme('theme-juve')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1JMvmdsW/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffffff">JUVENTUS</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/JUVENTUS.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffffff">JUVENTUS</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-psg" onclick="selectTheme('theme-psg')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/27SYjNhH/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#004170">PSG</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/PSG.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#004170">PSG</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-cutegirl" onclick="selectTheme('theme-cutegirl')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/jvG6YGxL/image.png" style="width: 250px; height: 35px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff8fa3">น้องฮาย</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/NONGHAI.png" style="width: 250px; height: 35px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff8fa3">น้องฮาย</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-saitama" onclick="selectTheme('theme-saitama')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/pv9bXrdx/image.png" style="width: 120px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#facc15">SAITAMA</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/SITAMA.png" style="width: 120px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#facc15">SAITAMA</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-nura" onclick="selectTheme('theme-nura')">
-                <span class="theme-icon"><img loading="lazy" src="https://img2.pic.in.th/image6ff1c0981c6d4b4a.md.png" style="width: 155px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#90caf9">นูระ หลานปีศาจ</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/NURA.png" style="width: 155px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#90caf9">นูระ หลานปีศาจ</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-ben10" onclick="selectTheme('theme-ben10')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/F4nSr01n/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00dc82">Ben 10</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/BEN10.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00dc82">Ben 10</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-pokemon" onclick="selectTheme('theme-pokemon')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/5W4Z8C98/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcb05; text-shadow: 1px 1px 0px #000;">โปเกม่อน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/POKEMON.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcb05; text-shadow: 1px 1px 0px #000;">โปเกม่อน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-bleach" onclick="selectTheme('theme-bleach')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/whWp3SFC/image.png" style="width: 150px; height: 32px; object-fit: contain; vertical-align: middle; filter: hue-rotate(300deg);"></span> <span style="color:#ff0000">Bleach บลีช</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/BLEACH.png" style="width: 150px; height: 32px; object-fit: contain; vertical-align: middle; filter: hue-rotate(300deg);"></span> <span style="color:#ff0000">Bleach บลีช</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-doraemon" onclick="selectTheme('theme-doraemon')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/DHVg5670/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#0096db">โดเรม่อน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/DOLEMON.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#0096db">โดเรม่อน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-kitty" onclick="selectTheme('theme-kitty')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/kg0x80Xn/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff1493">คิตตี้</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/KITTY.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff1493">คิตตี้</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-demon" onclick="selectTheme('theme-demon')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/MyWhXgwS/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00dc82">ดาบพิฆาตอสูร</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/DEMON.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00dc82">ดาบพิฆาตอสูร</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-onepiece" onclick="selectTheme('theme-onepiece')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/HTW8YwSV/image.png" style="width: 90px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffdd00">วันพีซ</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/ONEPIECE.png" style="width: 90px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffdd00">วันพีซ</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-naruto" onclick="selectTheme('theme-naruto')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/bgn5v2J6/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff7b00">นารูโตะ</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/NARUTO.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff7b00">นารูโตะ</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-dbz" onclick="selectTheme('theme-dbz')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/q3jdrGk8/image.png" style="width: 80px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffce00">ดราก้อนบอล</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/DARGONBALL.png" style="width: 80px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffce00">ดราก้อนบอล</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-aot" onclick="selectTheme('theme-aot')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/G3BZqc2M/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4a373">ผ่าพิภพไททัน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/TITAN.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4a373">ผ่าพิภพไททัน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-conan" onclick="selectTheme('theme-conan')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/1Y95rmRt/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#cc0000">โคนัน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/KONUN.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#cc0000">โคนัน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-toriko" onclick="selectTheme('theme-toriko')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/PZV5wkZG/image.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00a859">โทริโกะ</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/TORIKO.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00a859">โทริโกะ</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-solo" onclick="selectTheme('theme-solo')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/MkdyLX1h/image.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ffff">Solo Leveling</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/SOLO.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ffff">Solo Leveling</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-jjk" onclick="selectTheme('theme-jjk')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/jZJGm37T/image.png" style="width: 90px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#8a2be2">ผนึกมาร</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/O.png" style="width: 90px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#8a2be2">ผนึกมาร</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-rov" onclick="selectTheme('theme-rov')">
-                <span class="theme-icon"><img loading="lazy" src="https://play-lh.googleusercontent.com/fWAs7pgAaEwNk5gGF0sOsdO-dKUmxm94wEeGbXEF7fsmcnEOTqqkJtqvFEDwk3w_F3wiFDlr9-eX5DtLK1GJCw" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4af37">ตีป้อม ROV</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/ROV.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4af37">ตีป้อม ROV</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-ironman" onclick="selectTheme('theme-ironman')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/VcqwYhfT/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcc00">ไอรอนแมน</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/IRONMAN.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffcc00">ไอรอนแมน</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-arcade" onclick="selectTheme('theme-arcade')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/0Rx2F5Mm/image.png" style="width: 100px; height: 50px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff3300">8-BIT</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/8BIT.png" style="width: 100px; height: 50px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff3300">8-BIT</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-gta" onclick="selectTheme('theme-gta')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/qLht2BYB/image.png" style="width: 80px; height: 40px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#59b200">GTA</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/GTA.png" style="width: 80px; height: 40px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#59b200">GTA</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-mc" onclick="selectTheme('theme-mc')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/SXHQWgyn/image.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#55ff55">Minecraft</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/MINECRAFT.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#55ff55">Minecraft</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-hacker" onclick="selectTheme('theme-hacker')">
-                <span class="theme-icon"><img loading="lazy" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTUk-raOVomAfink3pUho-_6B3wSYZCpOgJXg&s" style="width: 120px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ff41">Hacker</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/HACKER.png" style="width: 120px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00ff41">Hacker</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-rpg" onclick="selectTheme('theme-rpg')">
-                <span class="theme-icon"><img loading="lazy" src="https://png.pngtree.com/png-vector/20251203/ourmid/pngtree-rpg-game-logo-with-sword-icon-shield-and-gold-accents-for-png-image_18105743.webp" style="width: 50px; height: 50px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4af37">Fantasy</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/RPG.png" style="width: 50px; height: 50px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#d4af37">Fantasy</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-cyber" onclick="selectTheme('theme-cyber')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/nNhxk87x/image.png" style="width: 90px; height: 45px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00f3ff">Cyberpunk</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/CYBER.png" style="width: 90px; height: 45px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#00f3ff">Cyberpunk</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-wealth" onclick="selectTheme('theme-wealth')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/50YBP9Z/image.png" style="width: 140px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffd700">สายเปย์</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/SAIPAY.png" style="width: 140px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ffd700">สายเปย์</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-stock" onclick="selectTheme('theme-stock')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/mCbVY5pB/image.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#0ecb81">เทรด</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/B.png" style="width: 100px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#0ecb81">เทรด</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-gold" onclick="selectTheme('theme-gold')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/V8NYPY9/image.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#e5c158">ทองคำไฮโซ</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/TONGKUM.png" style="width: 45px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#e5c158">ทองคำไฮโซ</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-valo" onclick="selectTheme('theme-valo')">
-                <span class="theme-icon"><img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/1280px-Valorant_logo_-_pink_color_version.svg.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff4655">Valorant</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/VALORANT.png" style="width: 32px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ff4655">Valorant</span>
             </button>
             <button class="theme-option-btn" id="btn-theme-default" onclick="selectTheme('default')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/Cpccjsp7/image.png" style="width: 110px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ddd">โหมดมืด</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/DARK.png" style="width: 110px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#ddd">โหมดมืด</span>
             </button>
             <button class="theme-option-btn" id="btn-light-mode" onclick="selectTheme('light-mode')">
-                <span class="theme-icon"><img loading="lazy" src="https://i.ibb.co/84MLvhHF/image.png" style="width: 110px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#fde047">โหมดสว่าง</span>
+                <span class="theme-icon"><img loading="lazy" src="/logo/LIGHT.png" style="width: 110px; height: 32px; object-fit: contain; vertical-align: middle;"></span> <span style="color:#fde047">โหมดสว่าง</span>
             </button>
         </div>
     </div>
